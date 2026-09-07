@@ -1,16 +1,16 @@
-import { supabaseServer } from '@/lib/supabase-server';
+import { requireUser } from '@/lib/guard';
 import TabBar from '@/components/TabBar';
 import Settings from '@/components/Settings';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
-  const sb = supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
-  const { data: me } = await sb.from('profiles').select('full_name,role,strava_athlete_id,coach_id').eq('id', user!.id).single();
+  const { profile } = await requireUser();
   return (
     <main className="shell">
       <h1>Cuenta</h1>
-      <Settings me={me!} />
-      <TabBar role={(me?.role as 'coach' | 'athlete') ?? 'athlete'} />
+      <Settings me={profile!} />
+      <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
     </main>
   );
 }

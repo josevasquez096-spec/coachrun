@@ -1,17 +1,19 @@
 import Link from 'next/link';
-import { supabaseServer } from '@/lib/supabase-server';
+import { redirect } from 'next/navigation';
+import { requireUser } from '@/lib/guard';
 import TabBar from '@/components/TabBar';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Coach() {
-  const sb = supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
-  const { data: me } = await sb.from('profiles').select('full_name,role').eq('id', user!.id).single();
-  const { data: athletes } = await sb.from('profiles').select('id,full_name,strava_athlete_id').eq('coach_id', user!.id).order('full_name');
+  const { sb, user, profile } = await requireUser();
+  if (profile?.role !== 'coach') redirect('/athlete');
+  const { data: athletes } = await sb.from('profiles').select('id,full_name,strava_athlete_id').eq('coach_id', user.id).order('full_name');
   return (
     <main className="shell">
-      <div className="topbar"><div className="brand">Coach<span>Run</span></div><span className="muted">{me?.full_name}</span></div>
+      <div className="topbar"><div className="brand">Coach<span>Run</span></div><span className="muted">{profile?.full_name}</span></div>
       <h1>Alumnos</h1>
-      <p className="muted">Tu código de entrenador: <code style={{ userSelect: 'all' }}>{user!.id}</code></p>
+      <p className="muted">Tu código de entrenador: <code style={{ userSelect: 'all' }}>{user.id}</code></p>
       <div className="athlete-list">
         {athletes?.length ? athletes.map((a) => (
           <Link key={a.id} href={`/coach/${a.id}`}>

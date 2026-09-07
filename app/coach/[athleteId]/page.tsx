@@ -1,11 +1,15 @@
-import { supabaseServer } from '@/lib/supabase-server';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { requireUser } from '@/lib/guard';
 import WorkoutForm from '@/components/WorkoutForm';
 import Plan from '@/components/Plan';
 import TabBar from '@/components/TabBar';
-import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
 
 export default async function Athlete({ params }: { params: { athleteId: string } }) {
-  const sb = supabaseServer();
+  const { sb, profile } = await requireUser();
+  if (profile?.role !== 'coach') redirect('/athlete');
   const { data: a } = await sb.from('profiles').select('id,full_name').eq('id', params.athleteId).single();
   const { data: workouts } = await sb.from('workouts').select('*').eq('athlete_id', params.athleteId).order('date');
   const { data: acts } = await sb.from('activities').select('*').eq('athlete_id', params.athleteId).order('started_at', { ascending: false }).limit(30);
