@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export default async function RecordPage() {
   const { sb, user, profile } = await requireUser();
   const today = new Date().toISOString().slice(0, 10);
-  const { data: todays } = await sb.from('workouts').select('id,title,target_distance_km,target_pace').eq('athlete_id', user.id).eq('date', today).neq('type', 'rest').limit(1).maybeSingle();
+  const { data: todays } = await sb.from('workouts').select('id,title,target_distance_km,target_pace,phases').eq('athlete_id', user.id).eq('date', today).neq('type', 'rest').limit(1).maybeSingle();
   return (
     <main className="shell">
       <h1>Grabar</h1>
