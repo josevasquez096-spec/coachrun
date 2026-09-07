@@ -5,11 +5,11 @@ import Settings from '@/components/Settings';
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  const { profile } = await requireUser();
+  const { user, profile } = await requireUser();
   return (
     <main className="shell">
       <h1>Cuenta</h1>
-      <Settings me={profile!} />
+      <Settings me={profile!} email={user.email} />
       <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
     </main>
   );
