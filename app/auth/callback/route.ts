@@ -7,12 +7,18 @@ export async function GET(req: Request) {
   if (code) {
     const sb = supabaseServer();
     const { data } = await sb.auth.exchangeCodeForSession(code);
-    // Vincula al coach si el alumno pegó su código (el código es el id del coach)
-    const coachCode = data.user?.user_metadata?.coach_code;
-    if (data.user && coachCode) {
+    const user = data.user;
+    if (user) {
       const admin = supabaseAdmin();
-      const { data: coach } = await admin.from('profiles').select('id').eq('id', coachCode).eq('role', 'coach').maybeSingle();
-      if (coach) await admin.from('profiles').update({ coach_id: coach.id }).eq('id', data.user.id);
+      const meta: any = user.user_metadata ?? {};
+      const { data: existing } = await admin.from('profiles').select('id,coach_id').eq('id', user.id).maybeSingle();
+      if (!existing) {
+        await admin.from('profiles').insert({ id: user.id, full_name: meta.full_name ?? user.email?.split('@')[0] ?? null, role: 'athlete' });
+      }
+      if (meta.coach_code && !existing?.coach_id) {
+        const { data: coach } = await admin.from('profiles').select('id').eq('id', meta.coach_code).eq('role', 'coach').maybeSingle();
+        if (coach) await admin.from('profiles').update({ coach_id: coach.id }).eq('id', user.id);
+      }
     }
   }
   return NextResponse.redirect(new URL('/', url.origin));

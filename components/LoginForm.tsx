@@ -5,7 +5,7 @@ import Footer from './Footer';
 
 type Mode = 'signin' | 'signup' | 'magic';
 
-export default function LoginForm({ inviteCoachId, inviteCoachName }: { inviteCoachId?: string; inviteCoachName?: string }) {
+export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }: { inviteCoachId?: string; inviteCoachName?: string; sesionRota?: boolean }) {
   const [mode, setMode] = useState<Mode>(inviteCoachId ? 'signup' : 'signin');
   const [email, setEmail] = useState(''); const [pass, setPass] = useState('');
   const [name, setName] = useState(''); const [coach, setCoach] = useState(inviteCoachId ?? '');
@@ -56,6 +56,16 @@ export default function LoginForm({ inviteCoachId, inviteCoachName }: { inviteCo
     <main className="shell" style={{ paddingTop: 48 }}>
       <div className="brand" style={{ fontSize: 34 }}>Coach<span>Run</span></div>
       <p className="muted" style={{ marginTop: 4 }}>Tu entrenador te pone el plan. Tú sales a correr.</p>
+
+      {sesionRota && (
+        <div className="notice" style={{ marginTop: 20, fontSize: 14 }}>
+          Tu sesión quedó a medias. Entra otra vez con tu correo y contraseña.{' '}
+          <button onClick={async () => { await supabaseBrowser().auth.signOut(); location.href = '/'; }}
+            style={{ background: 'none', border: 'none', padding: 0, textDecoration: 'underline', cursor: 'pointer', color: 'inherit', font: 'inherit' }}>
+            Limpiar sesión
+          </button>
+        </div>
+      )}
 
       {inviteCoachName && (
         <div className="notice" style={{ marginTop: 20, fontSize: 15 }}>
