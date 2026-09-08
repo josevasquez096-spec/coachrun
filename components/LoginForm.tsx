@@ -1,13 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import Footer from './Footer';
 
 type Mode = 'signin' | 'signup' | 'magic';
 
-export default function LoginForm() {
-  const [mode, setMode] = useState<Mode>('signin');
+export default function LoginForm({ inviteCoachId, inviteCoachName }: { inviteCoachId?: string; inviteCoachName?: string }) {
+  const [mode, setMode] = useState<Mode>(inviteCoachId ? 'signup' : 'signin');
   const [email, setEmail] = useState(''); const [pass, setPass] = useState('');
-  const [name, setName] = useState(''); const [coach, setCoach] = useState('');
+  const [name, setName] = useState(''); const [coach, setCoach] = useState(inviteCoachId ?? '');
   const [msg, setMsg] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -24,10 +25,11 @@ export default function LoginForm() {
           options: { data: { full_name: name, coach_code: coach }, emailRedirectTo: `${location.origin}/auth/callback` },
         });
         if (error) throw error;
-        // Si la confirmación por correo está desactivada, la sesión ya está lista
         const { data } = await sb.auth.getSession();
-        if (data.session) location.href = '/';
-        else setMsg('Cuenta creada. Revisa tu correo para confirmarla y luego entra con tu contraseña.');
+        if (data.session) {
+          if (coach) await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: coach }) });
+          location.href = '/';
+        } else setMsg('Cuenta creada. Revisa tu correo para confirmarla y luego entra con tu contraseña.');
       } else {
         const { error } = await sb.auth.signInWithOtp({
           email, options: { emailRedirectTo: `${location.origin}/auth/callback`, data: { full_name: name, coach_code: coach } },
@@ -38,6 +40,7 @@ export default function LoginForm() {
     } catch (e: any) {
       setErr(e?.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.'
         : e?.message?.includes('rate limit') ? 'Demasiados correos seguidos. Espera un rato o entra con contraseña.'
+        : e?.message === 'User already registered' ? 'Ya existe una cuenta con ese correo. Entra desde la pestaña «Entrar».'
         : e?.message ?? 'Algo falló.');
     }
     setBusy(false);
@@ -54,7 +57,13 @@ export default function LoginForm() {
       <div className="brand" style={{ fontSize: 34 }}>Coach<span>Run</span></div>
       <p className="muted" style={{ marginTop: 4 }}>Tu entrenador te pone el plan. Tú sales a correr.</p>
 
-      <div className="card" style={{ marginTop: 28 }}>
+      {inviteCoachName && (
+        <div className="notice" style={{ marginTop: 20, fontSize: 15 }}>
+          <b>{inviteCoachName}</b> te invita a entrenar. Crea tu cuenta y quedarás en su grupo.
+        </div>
+      )}
+
+      <div className="card" style={{ marginTop: inviteCoachName ? 12 : 28 }}>
         <div style={{ display: 'flex', gap: 4, background: 'var(--bg)', borderRadius: 999, padding: 4, marginBottom: 16 }}>
           {tab('signin', 'Entrar')}{tab('signup', 'Crear cuenta')}{tab('magic', 'Sin contraseña')}
         </div>
@@ -62,7 +71,10 @@ export default function LoginForm() {
         {mode === 'signup' && (
           <>
             <div className="field"><label>Nombre</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Como te llama tu entrenador" /></div>
-            <div className="field"><label>Código de entrenador (opcional)</label><input value={coach} onChange={(e) => setCoach(e.target.value)} placeholder="Te lo pasa tu coach" /></div>
+            {!inviteCoachId && (
+              <div className="field"><label>Código de entrenador (opcional)</label>
+                <input value={coach} onChange={(e) => setCoach(e.target.value)} placeholder="Te lo pasa tu coach" /></div>
+            )}
           </>
         )}
 
@@ -89,6 +101,7 @@ export default function LoginForm() {
       </div>
 
       <p className="muted" style={{ fontSize: 13, marginTop: 20 }}>Para instalarla: en el navegador toca «Compartir» → «Añadir a pantalla de inicio».</p>
+      <Footer />
     </main>
   );
 }

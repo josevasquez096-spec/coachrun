@@ -1,6 +1,7 @@
 import { requireUser } from '@/lib/guard';
 import Recorder from '@/components/Recorder';
 import TabBar from '@/components/TabBar';
+import Footer from '@/components/Footer';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export default async function RecordPage() {
     <main className="shell">
       <h1>Grabar</h1>
       <Recorder todays={todays} hasStrava={!!profile?.strava_athlete_id} />
+      <Footer />
       <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
     </main>
   );

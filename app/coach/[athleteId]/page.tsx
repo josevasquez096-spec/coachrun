@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/guard';
 import WorkoutForm from '@/components/WorkoutForm';
 import Plan from '@/components/Plan';
 import TabBar from '@/components/TabBar';
+import Footer from '@/components/Footer';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,8 @@ export default async function Athlete({ params }: { params: { athleteId: string 
       <h2>Asignar entrenamiento</h2>
       <WorkoutForm athleteId={params.athleteId} />
       <h2>Plan y actividades</h2>
-      <Plan workouts={workouts ?? []} activities={acts ?? []} editable />
+      <Plan workouts={workouts ?? []} activities={acts ?? []} editable athleteId={params.athleteId} />
+      <Footer />
       <TabBar role="coach" />
     </main>
   );

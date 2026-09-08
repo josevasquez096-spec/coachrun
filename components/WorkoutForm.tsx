@@ -16,7 +16,7 @@ export default function WorkoutForm({ athleteId }: { athleteId: string }) {
   async function save() {
     setSaving(true);
     const sb = supabaseBrowser(); const { data: { user } } = await sb.auth.getUser();
-    await sb.from('workouts').insert({
+    const { error } = await sb.from('workouts').insert({
       coach_id: user!.id, athlete_id: athleteId, date: f.date, type: f.type,
       title: f.title || TYPE_LABEL[f.type], description: f.description || null,
       target_distance_km: phases.length ? Number((totalMeters(phases) / 1000).toFixed(2)) : null,
@@ -24,6 +24,12 @@ export default function WorkoutForm({ athleteId }: { athleteId: string }) {
       target_pace: f.target_pace || null,
       phases: phases.length ? phases : null,
     });
+    if (!error) {
+      const fecha = new Date(f.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+      fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({
+        athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
+      }) }).catch(() => {});
+    }
     setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]);
     setSaving(false); r.refresh();
   }

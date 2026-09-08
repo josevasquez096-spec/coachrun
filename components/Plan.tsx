@@ -33,16 +33,22 @@ function Splits({ a }: { a: A }) {
   );
 }
 
-export default function Plan({ workouts, activities, editable = false }: { workouts: W[]; activities: A[]; editable?: boolean }) {
+export default function Plan({ workouts, activities, editable = false, athleteId }: { workouts: W[]; activities: A[]; editable?: boolean; athleteId?: string }) {
   const r = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [helpId, setHelpId] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
   const byDay = new Map<string, { w: W[]; a: A[] }>();
   workouts.forEach((w) => { const d = byDay.get(w.date) ?? { w: [], a: [] }; d.w.push(w); byDay.set(w.date, d); });
   activities.forEach((a) => { const k = a.started_at.slice(0, 10); const d = byDay.get(k) ?? { w: [], a: [] }; d.a.push(a); byDay.set(k, d); });
   const days = [...byDay.keys()].sort();
 
-  async function remove(id: string) { if (!confirm('¿Borrar este entrenamiento?')) return; await supabaseBrowser().from('workouts').delete().eq('id', id); r.refresh(); }
+  async function remove(id: string, title: string) {
+    if (!confirm('¿Borrar este entrenamiento?')) return;
+    await supabaseBrowser().from('workouts').delete().eq('id', id);
+    if (athleteId) fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({ athleteId, title: 'Entrenamiento cancelado', body: title }) }).catch(() => {});
+    r.refresh();
+  }
   async function toggle(w: W) { await supabaseBrowser().from('workouts').update({ completed: !w.completed }).eq('id', w.id); r.refresh(); }
   if (!days.length) return <p className="card muted">Todavía no hay nada en el plan.</p>;
 
@@ -67,7 +73,7 @@ export default function Plan({ workouts, activities, editable = false }: { worko
                       </div>
                       <div style={{ display: 'grid', gap: 6 }}>
                         <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => toggle(x)}>{x.completed ? 'Deshacer' : 'Hecho'}</button>
-                        {editable && <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => remove(x.id)}>Borrar</button>}
+                        {editable && <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => remove(x.id, x.title)}>Borrar</button>}
                       </div>
                     </div>
 
@@ -76,7 +82,17 @@ export default function Plan({ workouts, activities, editable = false }: { worko
                         <button className="btn ghost" style={{ padding: '4px 12px', fontSize: 12 }} onClick={() => setOpenId(openId === x.id ? null : x.id)}>
                           {openId === x.id ? 'Ocultar' : `Ver ${steps.length} fases`}
                         </button>
-                        <a className="btn ghost" style={{ padding: '4px 12px', fontSize: 12, marginLeft: 6 }} href={`/api/workouts/${x.id}/fit`}>Descargar para Garmin</a>
+                        <a className="btn ghost" style={{ padding: '4px 12px', fontSize: 12, marginLeft: 6 }} href={`/api/workouts/${x.id}/fit`}>Descargar .FIT</a>
+                        <button className="btn ghost" style={{ padding: '4px 12px', fontSize: 12, marginLeft: 6 }} onClick={() => setHelpId(helpId === x.id ? null : x.id)}>¿Cómo lo paso al Garmin?</button>
+                        {helpId === x.id && (
+                          <div className="notice" style={{ marginTop: 8, fontSize: 13 }}>
+                            No lo subas por la web de Garmin Connect: ahí solo se importan actividades ya hechas, y saldría como una ruta.
+                            <br />1. Conecta el reloj al computador con el cable USB.
+                            <br />2. Abre la unidad del reloj y entra a la carpeta <b>Garmin → NewFiles</b>.
+                            <br />3. Copia el .FIT ahí dentro y desconecta el reloj.
+                            <br />4. En el reloj: Entrenamiento → Entrenamientos. Aparecerá con sus fases y ritmos.
+                          </div>
+                        )}
                         {openId === x.id && (
                           <div style={{ marginTop: 8, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 10 }}>
                             {x.phases.map((p, i) => (

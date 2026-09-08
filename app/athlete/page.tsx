@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/guard';
 import Plan from '@/components/Plan';
 import TabBar from '@/components/TabBar';
+import Footer from '@/components/Footer';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,7 @@ export default async function AthleteHome() {
       {!profile?.strava_athlete_id && <p className="notice">Conecta Strava para que tus carreras se sincronicen solas. <Link href="/api/strava/connect" style={{ textDecoration: 'underline' }}>Conectar</Link></p>}
       {!profile?.coach_id && <p className="notice">Todavía no estás vinculado a un entrenador. Pídele su código y pégalo en <Link href="/athlete/settings" style={{ textDecoration: 'underline' }}>Cuenta</Link>.</p>}
       <Plan workouts={workouts ?? []} activities={acts ?? []} />
+      <Footer />
       <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
     </main>
   );
