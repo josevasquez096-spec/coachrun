@@ -15,6 +15,8 @@ async function owner(id: string) {
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const o = await owner(params.id);
   if ('error' in o) return NextResponse.json({ error: o.error }, { status: o.status });
+  // Las carreras ya registradas se conservan: solo dejan de apuntar a este entrenamiento.
+  await o.db.from('activities').update({ workout_id: null }).eq('workout_id', params.id);
   const { error } = await o.db.from('workouts').delete().eq('id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   notifyUser(o.w.athlete_id, 'Entrenamiento cancelado', o.w.title).catch(() => {});
