@@ -37,21 +37,33 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
 
   async function save() {
     setSaving(true); setErr('');
-    if (existing) {
-      const res = await fetch(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()) });
-      if (!res.ok) { setErr((await res.json()).error ?? 'No se pudo guardar.'); setSaving(false); return; }
-      setSaving(false); onDone?.(); r.refresh();
-      return;
+    // Si algo se cuelga, el botón vuelve solo a los 15 s en vez de quedarse pensando.
+    const corta = new AbortController();
+    const reloj = setTimeout(() => corta.abort(), 15000);
+    try {
+      if (existing) {
+        const res = await fetch(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()), signal: corta.signal });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) { setErr(j.error ?? 'No se pudo guardar.'); return; }
+        onDone?.(); r.refresh();
+        return;
+      }
+      const sb = supabaseBrowser(); const { data: { user } } = await sb.auth.getUser();
+      if (!user) { setErr('Tu sesión caducó. Entra de nuevo.'); return; }
+      const { error } = await sb.from('workouts').insert({ coach_id: user.id, athlete_id: athleteId, ...payload() });
+      if (error) { setErr(error.message); return; }
+      const fecha = new Date(f.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+      fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({
+        athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
+      }) }).catch(() => {});
+      setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]);
+      onDone?.(); r.refresh();
+    } catch (e: any) {
+      setErr(e?.name === 'AbortError' ? 'El servidor tardó demasiado. Revisa la conexión e inténtalo otra vez.' : (e?.message ?? 'No se pudo guardar.'));
+    } finally {
+      clearTimeout(reloj);
+      setSaving(false);
     }
-    const sb = supabaseBrowser(); const { data: { user } } = await sb.auth.getUser();
-    const { error } = await sb.from('workouts').insert({ coach_id: user!.id, athlete_id: athleteId, ...payload() });
-    if (error) { setErr(error.message); setSaving(false); return; }
-    const fecha = new Date(f.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
-    fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({
-      athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
-    }) }).catch(() => {});
-    setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]);
-    setSaving(false); onDone?.(); r.refresh();
   }
 
   return (

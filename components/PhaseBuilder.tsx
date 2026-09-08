@@ -87,14 +87,18 @@ export default function PhaseBuilder({ phases, onChange }: { phases: Phase[]; on
             <span style={{ width: 22, height: 22, borderRadius: 999, background: 'var(--track)', color: 'var(--flare-ink)', fontSize: 12, fontWeight: 700, display: 'grid', placeItems: 'center', flexShrink: 0, marginTop: 2 }}>{i + 1}</span>
             <button onClick={() => (editing === p.id ? setEditing(null) : startEdit(p))}
               style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{p.name} <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>· editar</span></div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</div>
               <div className="muted" style={{ fontSize: 13 }}>{describe(p)}</div>
             </button>
-            <div style={{ display: 'flex', gap: 2 }}>
-              <button className="btn ghost" style={{ padding: '3px 7px', fontSize: 12 }} onClick={() => move(i, -1)}>↑</button>
-              <button className="btn ghost" style={{ padding: '3px 7px', fontSize: 12 }} onClick={() => move(i, 1)}>↓</button>
-              <button className="btn ghost" style={{ padding: '3px 7px', fontSize: 12 }} onClick={() => dup(p)}>⧉</button>
-              <button className="btn ghost" style={{ padding: '3px 7px', fontSize: 12 }} onClick={() => { onChange(phases.filter((x) => x.id !== p.id)); if (editing === p.id) setEditing(null); }}>×</button>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, borderColor: 'var(--flare)', color: 'var(--flare-ink)' }}
+                onClick={() => (editing === p.id ? setEditing(null) : startEdit(p))}>
+                {editing === p.id ? 'Cerrar' : 'Editar'}
+              </button>
+              <button className="btn ghost" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => move(i, -1)} title="Subir">↑</button>
+              <button className="btn ghost" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => move(i, 1)} title="Bajar">↓</button>
+              <button className="btn ghost" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => dup(p)} title="Duplicar">⧉</button>
+              <button className="btn ghost" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => { if (confirm(`¿Borrar la fase "${p.name}"?`)) { onChange(phases.filter((x) => x.id !== p.id)); if (editing === p.id) setEditing(null); } }} title="Borrar">×</button>
             </div>
           </div>
           {editing === p.id && <Form d={d} set={set} times={times} onCommit={commit} onCancel={() => setEditing(null)} label="Guardar cambios" />}

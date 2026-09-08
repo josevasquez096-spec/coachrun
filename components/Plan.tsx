@@ -49,9 +49,21 @@ export default function Plan({ workouts, activities, editable = false, athleteId
   async function remove(id: string) {
     if (!confirm('¿Borrar este entrenamiento?')) return;
     setErr('');
-    const res = await fetch(`/api/workouts/${id}`, { method: 'DELETE' });
-    if (!res.ok) { setErr((await res.json()).error ?? 'No se pudo borrar.'); return; }
-    r.refresh();
+    try {
+      const res = await fetch(`/api/workouts/${id}`, { method: 'DELETE' });
+      const txt = await res.text();
+      if (!res.ok) {
+        let motivo = txt.slice(0, 120);
+        try { motivo = JSON.parse(txt).error ?? motivo; } catch {}
+        const detalle = `No se pudo borrar (${res.status}). ${motivo}`;
+        setErr(detalle); alert(detalle);
+        return;
+      }
+      r.refresh();
+    } catch (e: any) {
+      const detalle = `No se pudo borrar: ${e?.message ?? 'error de red'}`;
+      setErr(detalle); alert(detalle);
+    }
   }
   async function toggle(w: W) { await supabaseBrowser().from('workouts').update({ completed: !w.completed }).eq('id', w.id); r.refresh(); }
   if (!days.length) return <p className="card muted">Todavía no hay nada en el plan.</p>;
