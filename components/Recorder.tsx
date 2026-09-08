@@ -2,14 +2,22 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { haversine, type Point } from '@/lib/geo';
-import { fmtPace, fmtTime } from '@/lib/format';
+import { fmtPace, fmtTime, todayLocal } from '@/lib/format';
 import { expand, type Phase, type Step, fmtPaceStr } from '@/lib/phases';
 import { initAudio, beep, doubleBeep, phaseBeep, speak } from '@/lib/audio';
 
 const RunMap = dynamic(() => import('./RunMap'), { ssr: false });
-type Todays = { id: string; title: string; target_distance_km: number | null; target_pace: string | null; phases: Phase[] | null } | null;
+type Pendiente = { id: string; date: string; title: string; target_distance_km: number | null; target_pace: string | null; phases: Phase[] | null; completed: boolean };
 
-export default function Recorder({ todays, hasStrava }: { todays: Todays; hasStrava: boolean }) {
+export default function Recorder({ pendientes, hasStrava }: { pendientes: Pendiente[]; hasStrava: boolean }) {
+  const hoy = todayLocal();
+  const delDia = pendientes.filter((p) => p.date === hoy);
+  const otros = pendientes.filter((p) => p.date !== hoy && !p.completed);
+  // Preseleccionamos el de hoy sin terminar; si no hay, el de hoy aunque esté hecho.
+  const inicial = delDia.find((p) => !p.completed) ?? delDia[0] ?? null;
+  const [elegido, setElegido] = useState<Pendiente | null>(inicial);
+  const [libre, setLibre] = useState(false);
+  const todays = libre ? null : elegido;
   const steps: Step[] = todays?.phases ? expand(todays.phases) : [];
   const [state, setState] = useState<'idle' | 'running' | 'paused' | 'done' | 'saving' | 'saved'>('idle');
   const [pts, setPts] = useState<Point[]>([]);
@@ -128,10 +136,39 @@ export default function Recorder({ todays, hasStrava }: { todays: Todays; hasStr
 
   return (
     <div>
-      {todays && (
+      {state === 'idle' && (
         <div className="card" style={{ marginBottom: 12 }}>
-          <span className="pill">Hoy</span> <b>{todays.title}</b>
-          {!steps.length && <div className="muted" style={{ fontSize: 14 }}>{todays.target_distance_km ? `${todays.target_distance_km} km` : ''}{todays.target_pace ? ` · ${todays.target_pace} /km` : ''}</div>}
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>¿Qué vas a hacer?</div>
+          {[...delDia, ...otros].map((p) => {
+            const sel = !libre && elegido?.id === p.id;
+            const fecha = new Date(p.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' });
+            return (
+              <button key={p.id} onClick={() => { setElegido(p); setLibre(false); }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 6, padding: '10px 12px', cursor: 'pointer',
+                  borderRadius: 10, border: `2px solid ${sel ? 'var(--flare)' : 'var(--line)'}`, background: sel ? 'var(--track)' : 'transparent' }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{p.title} {p.completed && <span className="muted" style={{ fontWeight: 400 }}>· ya marcado</span>}</div>
+                <div className="muted" style={{ fontSize: 13 }}>
+                  {p.date === hoy ? 'Hoy' : fecha}
+                  {p.phases?.length ? ` · ${expand(p.phases).length} fases` : ''}
+                  {p.target_distance_km ? ` · ${p.target_distance_km} km` : ''}
+                </div>
+              </button>
+            );
+          })}
+          <button onClick={() => { setLibre(true); }}
+            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px', cursor: 'pointer',
+              borderRadius: 10, border: `2px solid ${libre ? 'var(--flare)' : 'var(--line)'}`, background: libre ? 'var(--track)' : 'transparent' }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Carrera libre</div>
+            <div className="muted" style={{ fontSize: 13 }}>Sin entrenamiento asignado</div>
+          </button>
+          {!pendientes.length && <p className="muted" style={{ fontSize: 13, marginTop: 8, marginBottom: 0 }}>Tu entrenador no te ha asignado nada para estos días.</p>}
+        </div>
+      )}
+
+      {todays && state !== 'idle' && !steps.length && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <span className="pill">En curso</span> <b>{todays.title}</b>
+          <div className="muted" style={{ fontSize: 14 }}>{todays.target_distance_km ? `${todays.target_distance_km} km` : ''}{todays.target_pace ? ` · ${todays.target_pace} /km` : ''}</div>
         </div>
       )}
 
@@ -178,7 +215,7 @@ export default function Recorder({ todays, hasStrava }: { todays: Todays; hasStr
             <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} style={{ width: 18, height: 18 }} />
             Avisos por voz y sonido
           </label>
-          <button className="btn go block" onClick={start}>Empezar</button>
+          <button className="btn go block" onClick={start}>{steps.length ? `Comenzar entrenamiento (${steps.length} fases)` : 'Empezar carrera libre'}</button>
         </>}
         {state === 'running' && <button className="btn block" onClick={pause}>Pausar</button>}
         {state === 'paused' && <><button className="btn go block" onClick={start}>Continuar</button><button className="btn flare block" onClick={stop}>Terminar</button></>}

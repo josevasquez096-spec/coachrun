@@ -11,8 +11,11 @@ export default function Settings({ me, email }: { me: { full_name: string | null
   const [smsg, setSmsg] = useState('');
 
   async function save() {
-    const res = await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: code }) });
-    setMsg(res.ok ? 'Guardado.' : 'No se encontró ese código de entrenador.'); r.refresh();
+    setMsg('Guardando…');
+    const res = await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: code.trim() }) });
+    const j = await res.json().catch(() => ({}));
+    setMsg(res.ok ? 'Guardado.' : (j.error ?? 'No se pudo guardar.'));
+    r.refresh();
   }
   async function setPassword() {
     const { error } = await supabaseBrowser().auth.updateUser({ password: pass });
@@ -30,7 +33,7 @@ export default function Settings({ me, email }: { me: { full_name: string | null
     <div className="card">
       {email && <p className="muted" style={{ marginTop: 0 }}>{email}</p>}
       <div className="field"><label>Nombre</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
-      <div className="field"><label>Código de entrenador</label><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Pega aquí el código de tu coach" /></div>
+      <div className="field"><label>Código de entrenador</label><input value={code} onChange={(e) => setCode(e.target.value.trim())} placeholder="Pega aquí el código de tu coach" /></div>
       {msg && <p className="muted">{msg}</p>}
       <button className="btn block" onClick={save}>Guardar</button>
 

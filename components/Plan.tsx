@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { TYPE_LABEL, fmtPace, fmtTime } from '@/lib/format';
+import { TYPE_LABEL, fmtPace, fmtTime, todayLocal } from '@/lib/format';
 import { expand, describe, type Phase } from '@/lib/phases';
+import WorkoutForm from './WorkoutForm';
 
 type W = { id: string; date: string; type: string; title: string; description: string | null; target_distance_km: number | null; target_duration_min: number | null; target_pace: string | null; completed: boolean; phases: Phase[] | null };
 type A = { id: string; workout_id: string | null; name: string | null; started_at: string; distance_m: number | null; moving_time_s: number | null; source: string; avg_hr: number | null; raw: any };
@@ -37,16 +38,19 @@ export default function Plan({ workouts, activities, editable = false, athleteId
   const r = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [helpId, setHelpId] = useState<string | null>(null);
-  const today = new Date().toISOString().slice(0, 10);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [err, setErr] = useState('');
+  const today = todayLocal();
   const byDay = new Map<string, { w: W[]; a: A[] }>();
   workouts.forEach((w) => { const d = byDay.get(w.date) ?? { w: [], a: [] }; d.w.push(w); byDay.set(w.date, d); });
   activities.forEach((a) => { const k = a.started_at.slice(0, 10); const d = byDay.get(k) ?? { w: [], a: [] }; d.a.push(a); byDay.set(k, d); });
   const days = [...byDay.keys()].sort();
 
-  async function remove(id: string, title: string) {
+  async function remove(id: string) {
     if (!confirm('¿Borrar este entrenamiento?')) return;
-    await supabaseBrowser().from('workouts').delete().eq('id', id);
-    if (athleteId) fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({ athleteId, title: 'Entrenamiento cancelado', body: title }) }).catch(() => {});
+    setErr('');
+    const res = await fetch(`/api/workouts/${id}`, { method: 'DELETE' });
+    if (!res.ok) { setErr((await res.json()).error ?? 'No se pudo borrar.'); return; }
     r.refresh();
   }
   async function toggle(w: W) { await supabaseBrowser().from('workouts').update({ completed: !w.completed }).eq('id', w.id); r.refresh(); }
@@ -54,6 +58,7 @@ export default function Plan({ workouts, activities, editable = false, athleteId
 
   return (
     <div className="plan">
+      {err && <p className="notice">{err}</p>}
       {days.map((d) => {
         const dt = new Date(d + 'T12:00'); const { w, a } = byDay.get(d)!;
         return (
@@ -73,9 +78,16 @@ export default function Plan({ workouts, activities, editable = false, athleteId
                       </div>
                       <div style={{ display: 'grid', gap: 6 }}>
                         <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => toggle(x)}>{x.completed ? 'Deshacer' : 'Hecho'}</button>
-                        {editable && <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => remove(x.id, x.title)}>Borrar</button>}
+                        {editable && <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => setEditId(editId === x.id ? null : x.id)}>{editId === x.id ? 'Cerrar' : 'Editar'}</button>}
+                        {editable && <button className="btn ghost" style={{ padding: '6px 12px', fontSize: 13 }} onClick={() => remove(x.id)}>Borrar</button>}
                       </div>
                     </div>
+
+                    {editable && editId === x.id && athleteId && (
+                      <div style={{ marginTop: 10 }}>
+                        <WorkoutForm athleteId={athleteId} existing={x} onDone={() => setEditId(null)} />
+                      </div>
+                    )}
 
                     {x.phases && x.phases.length > 0 && (
                       <div style={{ marginTop: 6 }}>

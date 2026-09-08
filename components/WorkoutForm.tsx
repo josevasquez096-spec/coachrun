@@ -2,36 +2,56 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { TYPE_LABEL } from '@/lib/format';
+import { TYPE_LABEL, todayLocal } from '@/lib/format';
 import PhaseBuilder from './PhaseBuilder';
 import { type Phase, totalMeters, totalSeconds } from '@/lib/phases';
 
-export default function WorkoutForm({ athleteId }: { athleteId: string }) {
+type Existing = {
+  id: string; date: string; type: string; title: string; description: string | null;
+  target_pace: string | null; phases: Phase[] | null;
+};
+
+export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId: string; existing?: Existing; onDone?: () => void }) {
   const r = useRouter();
-  const [f, setF] = useState({ date: new Date().toISOString().slice(0, 10), type: 'easy', title: '', description: '', target_pace: '' });
-  const [phases, setPhases] = useState<Phase[]>([]);
+  const [f, setF] = useState({
+    date: existing?.date ?? todayLocal(),
+    type: existing?.type ?? 'easy',
+    title: existing?.title ?? '',
+    description: existing?.description ?? '',
+    target_pace: existing?.target_pace ?? '',
+  });
+  const [phases, setPhases] = useState<Phase[]>(existing?.phases ?? []);
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
   const set = (k: string, v: string) => setF({ ...f, [k]: v });
 
+  const payload = () => ({
+    date: f.date, type: f.type,
+    title: f.title || TYPE_LABEL[f.type],
+    description: f.description || null,
+    target_distance_km: phases.length ? Number((totalMeters(phases) / 1000).toFixed(2)) : null,
+    target_duration_min: phases.length ? Math.round(totalSeconds(phases) / 60) : null,
+    target_pace: f.target_pace || null,
+    phases: phases.length ? phases : null,
+  });
+
   async function save() {
-    setSaving(true);
-    const sb = supabaseBrowser(); const { data: { user } } = await sb.auth.getUser();
-    const { error } = await sb.from('workouts').insert({
-      coach_id: user!.id, athlete_id: athleteId, date: f.date, type: f.type,
-      title: f.title || TYPE_LABEL[f.type], description: f.description || null,
-      target_distance_km: phases.length ? Number((totalMeters(phases) / 1000).toFixed(2)) : null,
-      target_duration_min: phases.length ? Math.round(totalSeconds(phases) / 60) : null,
-      target_pace: f.target_pace || null,
-      phases: phases.length ? phases : null,
-    });
-    if (!error) {
-      const fecha = new Date(f.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
-      fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({
-        athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
-      }) }).catch(() => {});
+    setSaving(true); setErr('');
+    if (existing) {
+      const res = await fetch(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()) });
+      if (!res.ok) { setErr((await res.json()).error ?? 'No se pudo guardar.'); setSaving(false); return; }
+      setSaving(false); onDone?.(); r.refresh();
+      return;
     }
+    const sb = supabaseBrowser(); const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from('workouts').insert({ coach_id: user!.id, athlete_id: athleteId, ...payload() });
+    if (error) { setErr(error.message); setSaving(false); return; }
+    const fecha = new Date(f.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+    fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({
+      athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
+    }) }).catch(() => {});
     setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]);
-    setSaving(false); r.refresh();
+    setSaving(false); onDone?.(); r.refresh();
   }
 
   return (
@@ -48,7 +68,13 @@ export default function WorkoutForm({ athleteId }: { athleteId: string }) {
 
       <div className="field" style={{ marginTop: 14 }}><label>Notas</label>
         <textarea rows={2} value={f.description} onChange={(e) => set('description', e.target.value)} placeholder="Sensaciones a buscar, material, terreno…" /></div>
-      <button className="btn flare block" onClick={save} disabled={saving}>{saving ? 'Guardando…' : 'Asignar'}</button>
+      {err && <p className="notice">{err}</p>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button className="btn flare" style={{ flex: 1 }} onClick={save} disabled={saving}>
+          {saving ? 'Guardando…' : existing ? 'Guardar cambios' : 'Asignar'}
+        </button>
+        {existing && <button className="btn ghost" onClick={onDone}>Cancelar</button>}
+      </div>
     </div>
   );
 }

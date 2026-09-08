@@ -27,7 +27,10 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }
         if (error) throw error;
         const { data } = await sb.auth.getSession();
         if (data.session) {
-          if (coach) await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: coach }) });
+          if (coach) {
+            const link = await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: coach.trim() }) });
+            if (!link.ok) { /* el guard lo reintenta al entrar, no bloqueamos el registro */ }
+          }
           location.href = '/';
         } else setMsg('Cuenta creada. Revisa tu correo para confirmarla y luego entra con tu contraseña.');
       } else {
