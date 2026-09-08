@@ -7,12 +7,22 @@ export const dynamic = 'force-dynamic';
 
 export default async function RecordPage() {
   const { sb, user, profile } = await requireUser();
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: todays } = await sb.from('workouts').select('id,title,target_distance_km,target_pace,phases').eq('athlete_id', user.id).eq('date', today).neq('type', 'rest').limit(1).maybeSingle();
+  // Traemos una ventana de días alrededor de hoy y dejamos que el cliente
+  // decida cuál es "hoy" en su zona horaria.
+  const from = new Date(); from.setDate(from.getDate() - 2);
+  const to = new Date(); to.setDate(to.getDate() + 2);
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const { data: pendientes } = await sb.from('workouts')
+    .select('id,date,title,target_distance_km,target_pace,phases,completed,type')
+    .eq('athlete_id', user.id)
+    .gte('date', iso(from)).lte('date', iso(to))
+    .neq('type', 'rest')
+    .order('date');
+
   return (
     <main className="shell">
       <h1>Grabar</h1>
-      <Recorder todays={todays} hasStrava={!!profile?.strava_athlete_id} />
+      <Recorder pendientes={pendientes ?? []} hasStrava={!!profile?.strava_athlete_id} />
       <Footer />
       <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
     </main>
