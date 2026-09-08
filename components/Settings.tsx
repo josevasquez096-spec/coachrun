@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import PushToggle from './PushToggle';
+import AvatarUpload from './AvatarUpload';
 
-export default function Settings({ me, email }: { me: { full_name: string | null; role: string; strava_athlete_id: number | null; coach_id: string | null }; email?: string }) {
+export default function Settings({ me, email }: { me: { id: string; full_name: string | null; role: string; strava_athlete_id: number | null; coach_id: string | null; avatar_url?: string | null }; email?: string }) {
   const r = useRouter();
   const [name, setName] = useState(me.full_name ?? ''); const [code, setCode] = useState(me.coach_id ?? '');
   const [pass, setPass] = useState(''); const [msg, setMsg] = useState(''); const [pmsg, setPmsg] = useState('');
@@ -31,6 +32,7 @@ export default function Settings({ me, email }: { me: { full_name: string | null
 
   return (
     <div className="card">
+      <AvatarUpload userId={me.id} url={me.avatar_url} name={me.full_name} />
       {email && <p className="muted" style={{ marginTop: 0 }}>{email}</p>}
       <div className="field"><label>Nombre</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
       <div className="field"><label>Código de entrenador</label><input value={code} onChange={(e) => setCode(e.target.value.trim())} placeholder="Pega aquí el código de tu coach" /></div>

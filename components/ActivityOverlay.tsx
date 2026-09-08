@@ -1,0 +1,114 @@
+'use client';
+import { useRef, useState } from 'react';
+import { fmtPace, fmtTime } from '@/lib/format';
+import { decodePolyline } from '@/lib/polyline';
+
+type A = { name: string | null; started_at: string; distance_m: number | null; moving_time_s: number | null; avg_hr: number | null; polyline: string | null };
+
+/** Genera una imagen cuadrada con la foto del usuario y los datos encima. */
+export default function ActivityOverlay({ a }: { a: A }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function generar(file: File) {
+    setBusy(true);
+    const S = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = S;
+    const ctx = canvas.getContext('2d')!;
+
+    const img = await createImageBitmap(file);
+    // Recorte "cover"
+    const escala = Math.max(S / img.width, S / img.height);
+    const w = img.width * escala, h = img.height * escala;
+    ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+
+    // Degradado inferior para que el texto se lea
+    const grad = ctx.createLinearGradient(0, S * 0.42, 0, S);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.82)');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+
+    // Trazado de la ruta arriba a la derecha
+    if (a.polyline) {
+      try {
+        const pts = decodePolyline(a.polyline);
+        if (pts.length > 3) {
+          const lats = pts.map((p) => p[0]), lngs = pts.map((p) => p[1]);
+          const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+          const box = 300, pad = 56;
+          const span = Math.max(maxLat - minLat, maxLng - minLng) || 1;
+          ctx.save();
+          ctx.strokeStyle = '#FF5A1F'; ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 10;
+          ctx.beginPath();
+          pts.forEach(([la, ln], i) => {
+            const x = S - pad - box + ((ln - minLng) / span) * box;
+            const y = pad + box - ((la - minLat) / span) * box;
+            i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          });
+          ctx.stroke(); ctx.restore();
+        }
+      } catch {}
+    }
+
+    const km = (a.distance_m ?? 0) / 1000;
+    const pace = (a.moving_time_s ?? 0) / (km || 1);
+
+    // Cifra principal
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 152px Archivo, system-ui, sans-serif';
+    ctx.fillText(km.toFixed(2), 62, S - 250);
+    ctx.font = '700 46px Archivo, system-ui, sans-serif';
+    ctx.fillStyle = '#FF5A1F';
+    ctx.fillText('KM', 66 + ctx.measureText('').width + 0, S - 190);
+
+    // Fila de datos
+    const datos: [string, string][] = [
+      ['TIEMPO', fmtTime(a.moving_time_s ?? 0)],
+      ['RITMO', `${fmtPace(pace)} /km`],
+    ];
+    if (a.avg_hr) datos.push(['PULSO', `${Math.round(a.avg_hr)} ppm`]);
+    datos.forEach(([et, v], i) => {
+      const x = 62 + i * 330;
+      ctx.fillStyle = 'rgba(255,255,255,.65)';
+      ctx.font = '700 30px Archivo, system-ui, sans-serif';
+      ctx.fillText(et, x, S - 132);
+      ctx.fillStyle = '#fff';
+      ctx.font = '800 58px Archivo, system-ui, sans-serif';
+      ctx.fillText(v, x, S - 76);
+    });
+
+    // Marca
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.font = '700 30px Archivo, system-ui, sans-serif';
+    const marca = 'CoachRun · By JVasquez';
+    ctx.fillText(marca, S - 62 - ctx.measureText(marca).width, S - 40);
+
+    setUrl(canvas.toDataURL('image/jpeg', 0.92));
+    setBusy(false);
+  }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <input ref={input} type="file" accept="image/*" style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) generar(f); }} />
+      {!url ? (
+        <button className="btn ghost block" onClick={() => input.current?.click()} disabled={busy}>
+          {busy ? 'Creando imagen…' : 'Crear foto con mis datos'}
+        </button>
+      ) : (
+        <>
+          <img src={url} alt="" style={{ width: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <a className="btn flare" style={{ flex: 1 }} href={url} download={`${(a.name ?? 'carrera').replace(/[^a-z0-9]+/gi, '-')}.jpg`}>Descargar</a>
+            <button className="btn ghost" onClick={() => input.current?.click()}>Otra foto</button>
+          </div>
+          <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>En el teléfono también puedes mantener pulsada la imagen para guardarla.</p>
+        </>
+      )}
+    </div>
+  );
+}
