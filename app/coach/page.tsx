@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/guard';
 import TabBar from '@/components/TabBar';
 import Footer from '@/components/Footer';
 import InviteLink from '@/components/InviteLink';
+import AvisoCopiado from '@/components/AvisoCopiado';
 import Avatar from '@/components/Avatar';
 import Refrescar from '@/components/Refrescar';
 
@@ -19,6 +20,7 @@ export default async function Coach() {
       <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{profile?.full_name}</span></div>
       <h1>Alumnos</h1>
       <InviteLink coachId={user.id} />
+      <AvisoCopiado />
       <div className="athlete-list">
         {athletes?.length ? athletes.map((a) => (
           <Link key={a.id} href={`/coach/${a.id}`}>
