@@ -121,6 +121,4 @@ otro con URL `/chat`. El cliente refresca cada 12 s (no hay realtime).
 - Comparación automática objetivo vs real con semáforo.
 - La barra inferior tiene 6 pestañas para el coach y queda apretada en pantallas
   pequeñas.
-- El aviso por voz de cada kilómetro debería decir el pulso, pero se queda con el
-  valor del arranque (ver la nota del `Recorder` más arriba).
 - Guardar en el repo las cuatro migraciones que faltan.

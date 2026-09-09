@@ -42,6 +42,9 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
   const watch = useRef<number | null>(null); const timer = useRef<number | null>(null);
   const lock = useRef<any>(null); const last = useRef<Point | null>(null);
   const pendienteM = useRef(0); const hrSum = useRef({ suma: 0, n: 0 }); const ble = useRef<HrHandle | null>(null);
+  // onPosition se registra una sola vez en watchPosition, asi que ahi no se puede
+  // leer el estado `hr`: se quedaria con el valor del arranque. Lo llevamos en un ref.
+  const hrRef = useRef<number | null>(null);
   const lastKm = useRef(0); const soundOn = useRef(true);
   const d = useRef({ dist: 0, stepDist: 0, stepTime: 0, elapsed: 0, idx: 0 });
   const recent = useRef<Point[]>([]);
@@ -108,7 +111,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
         const pace = d.current.elapsed / (d.current.dist / 1000);
         if (soundOn.current) {
           doubleBeep();
-          const extra = hr ? `. Pulso ${hr}` : '';
+          const extra = hrRef.current ? `. Pulso ${hrRef.current}` : '';
           setTimeout(() => speak(`Kilómetro ${km}. Ritmo medio ${fmtPaceStr(pace).replace(':', ' ')}${extra}`), 500);
         }
       }
@@ -145,7 +148,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
 
   async function conectarSensor() {
     try {
-      const h = await conectarPulso((bpm) => { setHr(bpm); hrSum.current.suma += bpm; hrSum.current.n++; });
+      const h = await conectarPulso((bpm) => { hrRef.current = bpm; setHr(bpm); hrSum.current.suma += bpm; hrSum.current.n++; });
       ble.current = h; setSensor(h.nombre);
     } catch { setMsg('No se pudo conectar el sensor de pulso.'); }
   }
