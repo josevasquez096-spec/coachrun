@@ -198,3 +198,9 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
   background-size: 400% 100%; animation: brillo 1.3s ease-in-out infinite; }
 @keyframes brillo { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .hueso { animation: none; } .punto.grabando { animation: none; } }
+
+/* Cabecera del resumen del entrenamiento */
+.resumen-cab { display: flex; width: 100%; gap: 10px; justify-content: space-between; align-items: center;
+  background: none; border: 0; padding: 0 0 8px; cursor: pointer; text-align: left;
+  font-size: 12px; font-weight: 700; color: var(--ink-2); letter-spacing: .02em; }
+.resumen-cab .ver { color: var(--verde-txt); white-space: nowrap; }

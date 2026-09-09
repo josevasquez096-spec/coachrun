@@ -12,9 +12,10 @@
  * cierre de la app tampoco borre lo que llevaba corrido.
  */
 import { cerrar, filtroNuevo, medir, type Filtro, type Point } from './geo';
-import { fmtPaceStr, type Step } from './phases';
+import { dictarCantidad, dictarObjetivo, dictarRitmo, type Phase, type Step } from './phases';
+import { repartir as repartirPuro } from './reparto';
 import { fmtTime } from './format';
-import { initAudio, beep, doubleBeep, phaseBeep, speak } from './audio';
+import { initAudio, despertarAudio, callar, beep, doubleBeep, phaseBeep, speak } from './audio';
 import { conectarPulso, type HrHandle } from './ble';
 
 export type EstadoRec = 'idle' | 'running' | 'paused' | 'done' | 'saving' | 'saved';
@@ -24,6 +25,7 @@ export type Sesion = {
   workoutId: string | null;
   titulo: string;
   steps: Step[];
+  fases: Phase[];   // las fases tal como las escribió el coach, sin desplegar
   pts: Point[];
   dist: number;        // metros
   elapsed: number;     // segundos
@@ -42,7 +44,7 @@ export type Sesion = {
 };
 
 const VACIA: Sesion = {
-  estado: 'idle', workoutId: null, titulo: 'Carrera', steps: [], pts: [],
+  estado: 'idle', workoutId: null, titulo: 'Carrera', steps: [], fases: [], pts: [],
   dist: 0, elapsed: 0, idx: 0, stepDist: 0, stepTime: 0, recentPace: 0,
   gpsAcc: null, hr: null, sensor: null, sonido: true, msg: '',
   rpe: null, notas: '', subirStrava: false,
@@ -59,6 +61,7 @@ let lock: any = null;
 let filtro: Filtro = filtroNuevo();
 let ultimoKm = 0;
 let marcas: { t: number; d: number }[] = [];   // distancia acumulada en los últimos 30 s
+let botellaD = 0, botellaT = 0;               // metros y segundos aún sin repartir entre las fases
 let hrSum = { suma: 0, n: 0 };
 let ble: HrHandle | null = null;
 let arranque: number | null = null;          // Date.now() del último "en marcha"
@@ -91,17 +94,19 @@ function borrarLocal() { try { localStorage.removeItem(CLAVE); } catch {} }
 function decirFase(i: number, prefijo = '') {
   const f = s.steps[i];
   if (!f || !s.sonido) return;
-  const cuanto = f.mode === 'distance'
-    ? (f.meters! >= 1000 ? `${(f.meters! / 1000).toFixed(1)} kilómetros` : `${f.meters} metros`)
-    : `${Math.round((f.seconds ?? 0) / 60)} minutos`;
-  const obj = f.paceLow || f.paceHigh ? `, ritmo ${fmtPaceStr(f.paceLow || f.paceHigh)}` : f.hrZone ? `, zona ${f.hrZone}` : '';
   phaseBeep();
-  setTimeout(() => speak(`${prefijo}${f.name}. ${cuanto}${obj}`), 700);
+    // "Serie 2/12" la voz lo lee como una división: mejor "Serie 2 de 12".
+  const nombre = f.name.replace('/', ' de ');
+  setTimeout(() => speak(`${prefijo}${nombre}. ${dictarCantidad(f)}${dictarObjetivo(f)}`), 700);
 }
 
-function avanzar() {
-  s.idx += 1; s.stepDist = 0; s.stepTime = 0;
-  if (s.idx < s.steps.length) decirFase(s.idx);
+/** Pasa el bote por `lib/reparto.ts` y avisa una sola vez de dónde quedamos. */
+function repartir() {
+  const r = repartirPuro(s.steps, { idx: s.idx, stepDist: s.stepDist, stepTime: s.stepTime, boteD: botellaD, boteT: botellaT });
+  s.idx = r.idx; s.stepDist = r.stepDist; s.stepTime = r.stepTime;
+  botellaD = r.boteD; botellaT = r.boteT;
+  if (!r.saltos) return;
+  if (s.idx < s.steps.length) decirFase(s.idx, r.saltos > 1 ? 'Al día. ' : '');
   else if (s.sonido) { phaseBeep(); setTimeout(() => speak('Entrenamiento completado. Buen trabajo.'), 700); }
 }
 
@@ -118,11 +123,11 @@ function tick() {
   const delta = nuevo - s.elapsed;
   if (delta <= 0) return;
   s.elapsed = nuevo;
-  if (s.steps.length && s.idx < s.steps.length) {
-    s.stepTime += delta;
-    const f = s.steps[s.idx];
-    if (f.mode === 'time' && s.stepTime >= (f.seconds ?? 0)) avanzar();
-  }
+  // Cada 20 s se le recuerda al navegador que siga con el audio: si no, tras un
+  // rato en segundo plano acepta las frases pero no las dice.
+  if (s.sonido && nuevo % 20 === 0) despertarAudio();
+  botellaT += delta;
+  repartir();
   guardarLocal();
   emitir();
 }
@@ -156,15 +161,12 @@ function onPos(pos: GeolocationPosition) {
       if (s.sonido) {
         doubleBeep();
         const extra = s.hr ? `. Pulso ${s.hr}` : '';
-        setTimeout(() => speak(`Kilómetro ${km}. Ritmo medio ${fmtPaceStr(ritmo).replace(':', ' ')}${extra}`), 500);
+        setTimeout(() => speak(`Kilómetro ${km}. Ritmo medio ${dictarRitmo(ritmo)} por kilómetro${extra}`), 500);
       }
     }
 
-    if (s.steps.length && s.idx < s.steps.length) {
-      s.stepDist += avance;
-      const f = s.steps[s.idx];
-      if (f.mode === 'distance' && s.stepDist >= (f.meters ?? 0)) avanzar();
-    }
+    botellaD += avance;
+    repartir();
   }
 
   guardarLocal();
@@ -190,7 +192,7 @@ function soltarGps() {
   lock?.release?.(); lock = null;
   // El filtro empieza de cero: entre la pausa y la vuelta puede haber movimiento
   // que no vimos, y no queremos contarlo como una línea recta.
-  filtro = filtroNuevo(); marcas = [];
+  filtro = filtroNuevo(); marcas = []; botellaD = botellaT = 0;
   s.recentPace = 0;
 }
 
@@ -198,10 +200,11 @@ function soltarGps() {
 
 /** Arranca una carrera nueva. Llamar siempre desde un clic: iOS exige un toque
  *  del usuario para dejar sonar el audio. */
-export function iniciar(cfg: { workoutId: string | null; titulo: string; steps: Step[]; sonido: boolean; subirStrava: boolean }) {
+export function iniciar(cfg: { workoutId: string | null; titulo: string; steps: Step[]; fases: Phase[]; sonido: boolean; subirStrava: boolean }) {
   if (!('geolocation' in navigator)) { s.msg = 'Este navegador no tiene GPS.'; emitir(); return; }
   s = { ...VACIA, ...cfg, estado: 'running' };
   filtro = filtroNuevo(); marcas = []; ultimoKm = 0; hrSum = { suma: 0, n: 0 };
+  botellaD = botellaT = 0;
   acumuladoMs = 0; arranque = Date.now();
   initAudio();
   engancharGps();
@@ -230,7 +233,7 @@ export function pausar() {
   acumuladoMs += Date.now() - (arranque ?? Date.now());
   arranque = null;
   s.dist += cerrar(filtro);
-  soltarGps();
+  soltarGps(); callar();
   s.estado = 'paused'; s.elapsed = segundos();
   if (s.sonido) { beep(440, 0.2); setTimeout(() => speak('En pausa.'), 350); }
   guardarLocal(true);
@@ -241,7 +244,7 @@ export function terminar() {
   if (s.estado !== 'running' && s.estado !== 'paused') return;
   if (arranque) { acumuladoMs += Date.now() - arranque; arranque = null; }
   s.dist += cerrar(filtro);
-  soltarGps();
+  soltarGps(); callar();
   ble?.stop(); ble = null;
   s.estado = 'done'; s.elapsed = segundos();
   if (s.sonido) {
@@ -255,7 +258,7 @@ export function terminar() {
 }
 
 export function descartar() {
-  soltarGps();
+  soltarGps(); callar();
   ble?.stop(); ble = null;
   s = { ...VACIA };
   acumuladoMs = 0; arranque = null; ultimoKm = 0; hrSum = { suma: 0, n: 0 };
@@ -264,7 +267,10 @@ export function descartar() {
 }
 
 export function saltarFase() {
-  if (s.idx < s.steps.length) { avanzar(); guardarLocal(true); emitir(); }
+  if (s.idx >= s.steps.length) return;
+  s.idx += 1; s.stepDist = 0; s.stepTime = 0;
+  if (s.idx < s.steps.length) decirFase(s.idx);
+  guardarLocal(true); emitir();
 }
 
 export function ponerSonido(v: boolean) { s.sonido = v; guardarLocal(true); emitir(); }
@@ -330,6 +336,10 @@ if (typeof window !== 'undefined') {
 
   // El bloqueo de pantalla se pierde al pasar la app a segundo plano: lo repedimos.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && s.estado === 'running') pedirLock();
+    if (document.visibilityState !== 'visible' || s.estado !== 'running') return;
+    pedirLock();
+    // El navegador deja el audio y la voz suspendidos al volver de segundo plano:
+    // sin esto la app se quedaba muda el resto de la carrera.
+    despertarAudio();
   });
 }

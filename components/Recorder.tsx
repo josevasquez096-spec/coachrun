@@ -3,7 +3,7 @@ import { useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { fmtPace, fmtTime, todayLocal } from '@/lib/format';
-import { expand, fmtAmount, fmtPaceStr, type Phase, type Step } from '@/lib/phases';
+import { describe, expand, fmtAmount, fmtPaceStr, type Phase, type Step } from '@/lib/phases';
 import { zonas, zonaDe, RPE_LABEL, type Zona } from '@/lib/zones';
 import { bleDisponible } from '@/lib/ble';
 import * as ses from '@/lib/session';
@@ -13,15 +13,54 @@ const RunMap = dynamic(() => import('./RunMap'), { ssr: false });
 type Pendiente = { id: string; date: string; title: string; target_distance_km: number | null; target_pace: string | null; phases: Phase[] | null; completed: boolean };
 type Perfil = { max_hr: number | null; resting_hr: number | null };
 
-/** La lista completa del entrenamiento, con lo hecho, lo que toca y lo que falta. */
-function ListaFases({ steps, idx, activa }: { steps: Step[]; idx: number; activa: boolean }) {
+/**
+ * El entrenamiento, en resumen. Una línea por fase del coach ("12× 200 m a
+ * 3:30–3:45 · recuperación 1 min") en vez de una línea por repetición, que en
+ * una sesión de series se hacía larguísima. Se toca para ver el paso a paso.
+ */
+function ListaFases({ fases, steps, idx, activa }: { fases: Phase[]; steps: Step[]; idx: number; activa: boolean }) {
+  const [abierta, setAbierta] = useState(false);
   if (!steps.length) return null;
+
+  const resumible = fases.length > 0 && fases.length < steps.length;
+  const verPasos = abierta || !resumible;
+  const terminado = activa && idx >= steps.length;
+  const faseActual = activa && !terminado ? steps[idx]?.fase ?? 0 : -1;
+
+  // Repeticiones de una fase (sin contar las recuperaciones) y cuántas van.
+  const repes = (f: number) => steps.filter((x) => x.fase === f && x.kind !== 'rest').length;
+  const repesHechas = (f: number) => steps.slice(0, idx).filter((x) => x.fase === f && x.kind !== 'rest').length;
+
   return (
     <div className="card" style={{ marginBottom: 12 }}>
-      <div className="muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-        ENTRENAMIENTO COMPLETO · {steps.length} FASES
-      </div>
-      {steps.map((f, i) => {
+      {resumible ? (
+        <button className="resumen-cab" onClick={() => setAbierta(!abierta)}>
+          <span>{abierta ? 'PASO A PASO' : `ENTRENAMIENTO · ${fases.length} ${fases.length === 1 ? 'BLOQUE' : 'BLOQUES'}`}</span>
+          <span className="ver">{abierta ? 'Ver resumen ▲' : 'Ver cada repetición ▼'}</span>
+        </button>
+      ) : (
+        <div className="resumen-cab" style={{ cursor: 'default' }}><span>ENTRENAMIENTO · {steps.length} FASES</span></div>
+      )}
+
+      {!verPasos && fases.map((p, i) => {
+        const hecha = terminado || (faseActual >= 0 && i < faseActual);
+        const ahora = i === faseActual;
+        const total = repes(i);
+        return (
+          <div key={i} className={`fase-fila ${hecha ? 'hecha' : ''} ${ahora ? 'ahora' : ''}`}>
+            <span className="fase-n">{hecha ? '✓' : i + 1}</span>
+            <span className="fase-txt">
+              <b>{p.name}</b>
+              <small className="muted">
+                {describe(p)}
+                {ahora && total > 1 ? ` · vas por la ${Math.min(repesHechas(i) + 1, total)} de ${total}` : ''}
+              </small>
+            </span>
+          </div>
+        );
+      })}
+
+      {verPasos && steps.map((f, i) => {
         const hecha = activa && i < idx;
         const ahora = activa && i === idx;
         return (
@@ -58,6 +97,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
   // Antes de empezar mandan las fases del entrenamiento elegido; una vez en
   // marcha manda lo que guarda el motor, que es lo que se está corriendo.
   const steps: Step[] = enMarcha ? S.steps : (previo?.phases ? expand(previo.phases) : []);
+  const fases: Phase[] = enMarcha ? S.fases : (previo?.phases ?? []);
   const idx = enMarcha ? S.idx : 0;
 
   const zs: Zona[] | null = zonas(perfil?.max_hr, perfil?.resting_hr);
@@ -76,7 +116,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
     ses.iniciar({
       workoutId: previo?.id ?? null,
       titulo: previo?.title ?? 'Carrera',
-      steps, sonido, subirStrava: hasStrava,
+      steps, fases, sonido, subirStrava: hasStrava,
     });
   }
 
@@ -149,7 +189,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
         </div>
       )}
 
-      <ListaFases steps={steps} idx={idx} activa={enMarcha} />
+      <ListaFases fases={fases} steps={steps} idx={idx} activa={enMarcha} />
 
       <div className="rec-map"><RunMap points={S.pts} /></div>
 

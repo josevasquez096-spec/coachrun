@@ -132,7 +132,21 @@ componentes.
 - Cada pocos segundos se guarda una copia en `localStorage` (`coachrun.sesion`).
   Si la app se cierra, al volver la carrera aparece **en pausa**: el GPS estuvo
   parado y no sabemos por dónde fue mientras tanto.
-- La barra de pestañas enseña un punto verde en "Grabar" mientras hay carrera.
+- La barra de pestañas enseña un punto verde en "Iniciar" mientras hay carrera.
+- **Las fases se reparten con un "bote"**, en `lib/reparto.ts` (función pura,
+  probada con `node scripts/probar-reparto.mjs`). Al bloquear la pantalla el
+  navegador congela la app, y al volver llegan de golpe varios minutos y varios
+  cientos de metros. Sumarlos a la fase actual y adelantar UNA fase tiraba el
+  resto: el atleta hacía cinco series y la app seguía en la primera. El bote se
+  va gastando fase por fase, y cada fase se cobra en metros **y** en segundos
+  usando su propio ritmo previsto. Repartir en proporción al total se pasaba de
+  largo (daba a las recuperaciones el ritmo medio de las series). Queda
+  ligeramente corto antes que largo: mejor saltar una fase a mano que
+  encontrarse el entrenamiento dado por terminado.
+- Tras un salto de varias fases se avisa **una sola vez**, no una por fase.
+- La pantalla enseña el entrenamiento **resumido**, una línea por fase del coach
+  (`describe()`), y se despliega al tocarlo. Por eso cada `Step` lleva `fase`,
+  la posición de la fase de la que salió.
 
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
@@ -169,6 +183,16 @@ pantalla y así el número no parpadea. Se refresca cada 30 s y al volver a la a
 - Dentro de `onPosition` del `Recorder` no se pueden leer estados de React: la
   función se registra una sola vez en `watchPosition` y se queda con los valores
   del arranque. Lo que haga falta ahí va en un `useRef`.
+- La app se quedaba **muda a mitad de carrera**. Dos causas, las dos en
+  `lib/audio.ts`: el navegador suspende el `AudioContext` al pasar a segundo
+  plano y no lo reanuda solo (`despertarAudio()`, al volver a la app y cada 20 s),
+  y la voz se queda colgada aceptando frases sin decirlas (se llama a
+  `speechSynthesis.cancel()` antes de cada frase). Las frases van en cola: dos
+  seguidas se cortaban entre sí.
+- La voz leía solo un extremo del ritmo ("a 3:00" en vez de "entre 3 y 3:30") y
+  demasiado rápido. Los textos hablados se arman con `dictarCantidad()` y
+  `dictarObjetivo()` de `lib/phases.ts`, no a mano: "3:30" hay que dictarlo
+  "3 30" y "Serie 2/12" como "Serie 2 de 12", o la voz lo lee como una división.
 
 ## Que la app vaya fluida
 Todas las páginas son `force-dynamic` y cada una hace `requireUser()` (validar

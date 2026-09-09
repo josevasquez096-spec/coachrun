@@ -24,6 +24,7 @@ export type Phase = {
 export type Step = {
   name: string; kind: Phase['kind']; mode: 'distance' | 'time';
   meters?: number; seconds?: number; paceLow?: number; paceHigh?: number; hrZone?: number;
+  fase?: number;   // posición de la fase del coach de la que salió este paso
 };
 
 export const KIND_LABEL: Record<Phase['kind'], string> = {
@@ -50,23 +51,23 @@ export function fmtAmount(mode: 'distance' | 'time', meters?: number, seconds?: 
 /** Convierte las fases del coach en la lista de pasos que se ejecutan uno tras otro. */
 export function expand(phases: Phase[]): Step[] {
   const out: Step[] = [];
-  for (const p of phases) {
+  phases.forEach((p, fase) => {
     const times = Math.max(1, p.times ?? 1);
     for (let i = 0; i < times; i++) {
       out.push({
         name: times > 1 ? `${p.name} ${i + 1}/${times}` : p.name,
         kind: p.kind, mode: p.mode, meters: p.meters, seconds: p.seconds,
-        paceLow: p.paceLow, paceHigh: p.paceHigh, hrZone: p.hrZone,
+        paceLow: p.paceLow, paceHigh: p.paceHigh, hrZone: p.hrZone, fase,
       });
       const isLast = i === times - 1;
       if (p.rest && (!isLast || p.restAfter)) {
         out.push({
           name: p.rest.name || (p.rest.activo === false ? 'Pausa' : 'Recuperación'),
-          kind: 'rest', mode: p.rest.mode, meters: p.rest.meters, seconds: p.rest.seconds,
+          kind: 'rest', mode: p.rest.mode, meters: p.rest.meters, seconds: p.rest.seconds, fase,
         });
       }
     }
-  }
+  });
   return out;
 }
 
@@ -90,4 +91,35 @@ export function describe(p: Phase) {
   const rest = p.rest
     ? ` · recuperación ${fmtAmount(p.rest.mode, p.rest.meters, p.rest.seconds)}${p.rest.activo === false ? ' parado' : ''}` : '';
   return `${times}${dur}${pace}${zona}${rest}`;
+}
+
+/** Un ritmo tal como se dicta: "3:30" la voz lo lee raro, "3 30" lo lee bien. */
+export function dictarRitmo(sec?: number) {
+  if (!sec) return '';
+  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+  return s === 0 ? `${m} minutos` : `${m} ${String(s).padStart(2, '0')}`;
+}
+
+/** El objetivo de un paso, en palabras y completo (antes solo decía un extremo). */
+export function dictarObjetivo(s: Step) {
+  if (s.paceLow && s.paceHigh && s.paceLow !== s.paceHigh)
+    return `, a ritmo entre ${dictarRitmo(s.paceLow)} y ${dictarRitmo(s.paceHigh)} por kilómetro`;
+  const uno = s.paceLow || s.paceHigh;
+  if (uno) return `, a ritmo de ${dictarRitmo(uno)} por kilómetro`;
+  if (s.hrZone) return `, en zona ${s.hrZone} de pulso`;
+  return '';
+}
+
+/** La cantidad de un paso, en palabras. */
+export function dictarCantidad(s: Step) {
+  if (s.mode === 'distance') {
+    const m = s.meters ?? 0;
+    if (m >= 1000) { const km = m / 1000; return `${km % 1 === 0 ? km : km.toFixed(1).replace('.', ' coma ')} kilómetros`; }
+    return `${m} metros`;
+  }
+  const seg = s.seconds ?? 0;
+  if (seg < 60) return `${seg} segundos`;
+  const min = Math.floor(seg / 60), resto = seg % 60;
+  const mm = `${min} ${min === 1 ? 'minuto' : 'minutos'}`;
+  return resto ? `${mm} y ${resto} segundos` : mm;
 }
