@@ -21,7 +21,7 @@ export async function requireUser() {
   const meta: any = user.user_metadata ?? {};
 
   let { data: profile } = await sb.from('profiles')
-    .select('id,full_name,role,coach_id,strava_athlete_id,avatar_url').eq('id', user.id).maybeSingle();
+    .select('id,full_name,role,coach_id,strava_athlete_id,avatar_url,max_hr,resting_hr').eq('id', user.id).maybeSingle();
 
   if (!profile) {
     await admin.from('profiles').upsert({
@@ -29,7 +29,7 @@ export async function requireUser() {
       full_name: meta.full_name ?? user.email?.split('@')[0] ?? null,
       role: 'athlete',
     }, { onConflict: 'id' });
-    const again = await admin.from('profiles').select('id,full_name,role,coach_id,strava_athlete_id,avatar_url').eq('id', user.id).maybeSingle();
+    const again = await admin.from('profiles').select('id,full_name,role,coach_id,strava_athlete_id,avatar_url,max_hr,resting_hr').eq('id', user.id).maybeSingle();
     profile = again.data;
   }
 

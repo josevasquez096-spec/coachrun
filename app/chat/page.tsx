@@ -12,7 +12,12 @@ export default async function ChatPage({ searchParams }: { searchParams: { atlet
 
   // El coach elige con quién habla; el atleta habla siempre con su entrenador.
   if (esCoach && !searchParams.atleta) {
-    const { data: alumnos } = await sb.from('profiles').select('id,full_name,avatar_url').eq('coach_id', user.id).order('full_name');
+    const [{ data: alumnos }, { data: nuevos }] = await Promise.all([
+      sb.from('profiles').select('id,full_name,avatar_url').eq('coach_id', user.id).order('full_name'),
+      sb.from('messages').select('athlete_id').eq('coach_id', user.id).neq('sender_id', user.id).is('read_at', null).limit(500),
+    ]);
+    const sinLeer: Record<string, number> = {};
+    for (const m of nuevos ?? []) sinLeer[m.athlete_id] = (sinLeer[m.athlete_id] ?? 0) + 1;
     return (
       <main className="shell">
         <h1>Mensajes</h1>
@@ -23,7 +28,7 @@ export default async function ChatPage({ searchParams }: { searchParams: { atlet
                 <Avatar url={a.avatar_url} name={a.full_name} size={40} />
                 <span className="name">{a.full_name || 'Sin nombre'}</span>
               </span>
-              <span className="muted">›</span>
+              {sinLeer[a.id] ? <span className="sin-leer">{sinLeer[a.id]}</span> : <span className="muted">›</span>}
             </Link>
           )) : <p className="card muted">Aún no tienes alumnos.</p>}
         </div>

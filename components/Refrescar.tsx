@@ -16,29 +16,33 @@ export default function Refrescar() {
     setTimeout(() => { setCargando(false); setTiro(0); }, 900);
   }
 
+  // Los oyentes se registran una sola vez. Antes se quitaban y se volvían a poner
+  // en cada milímetro del gesto, lo que hacía el desplazamiento pesado en el móvil.
+  const tiroRef = useRef(0); const cargandoRef = useRef(false);
+  tiroRef.current = tiro; cargandoRef.current = cargando;
+
   useEffect(() => {
     const onStart = (e: TouchEvent) => {
-      if (window.scrollY <= 0) inicio.current = e.touches[0].clientY;
-      else inicio.current = null;
+      inicio.current = window.scrollY <= 0 ? e.touches[0].clientY : null;
     };
     const onMove = (e: TouchEvent) => {
-      if (inicio.current === null || cargando) return;
+      if (inicio.current === null || cargandoRef.current) return;
       const d = e.touches[0].clientY - inicio.current;
       if (d > 0 && window.scrollY <= 0) setTiro(Math.min(d * 0.5, 90));
     };
     const onEnd = () => {
-      if (tiro >= UMBRAL) refrescar(); else setTiro(0);
+      if (tiroRef.current >= UMBRAL) refrescar(); else setTiro(0);
       inicio.current = null;
     };
     window.addEventListener('touchstart', onStart, { passive: true });
     window.addEventListener('touchmove', onMove, { passive: true });
-    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchend', onEnd, { passive: true });
     return () => {
       window.removeEventListener('touchstart', onStart);
       window.removeEventListener('touchmove', onMove);
       window.removeEventListener('touchend', onEnd);
     };
-  }, [tiro, cargando]);
+  }, []);
 
   return (
     <>
