@@ -9,8 +9,8 @@ export default function InviteLink({ coachId }: { coachId: string }) {
     try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch {}
   }
   async function share() {
-    const text = `Únete a mi grupo de entrenamiento en CoachRun: ${link}`;
-    if (navigator.share) { try { await navigator.share({ title: 'CoachRun', text, url: link }); return; } catch {} }
+    const text = `Únete a mi grupo de entrenamiento en MyCoachRuns: ${link}`;
+    if (navigator.share) { try { await navigator.share({ title: 'MyCoachRuns', text, url: link }); return; } catch {} }
     copy();
   }
 

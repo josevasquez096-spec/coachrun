@@ -49,7 +49,7 @@ export default function PushToggle() {
   return (
     <>
       <h2>Notificaciones</h2>
-      {state === 'no-soportado' && <p className="muted" style={{ fontSize: 14 }}>Este navegador no admite notificaciones. En iPhone, primero añade CoachRun a la pantalla de inicio y ábrela desde ahí.</p>}
+      {state === 'no-soportado' && <p className="muted" style={{ fontSize: 14 }}>Este navegador no admite notificaciones. En iPhone, primero añade MyCoachRuns a la pantalla de inicio y ábrela desde ahí.</p>}
       {state === 'bloqueado' && <p className="muted" style={{ fontSize: 14 }}>Las bloqueaste en este navegador. Actívalas desde los ajustes del sitio y vuelve aquí.</p>}
       {state === 'off' && <><p className="muted" style={{ fontSize: 14, marginTop: 0 }}>Recibe un aviso cuando tu entrenador te asigne o cambie un entrenamiento.</p><button className="btn block" onClick={enable}>Activar notificaciones</button></>}
       {state === 'on' && <><p className="muted" style={{ fontSize: 14, marginTop: 0 }}>Activas en este dispositivo.</p><button className="btn ghost block" onClick={disable}>Desactivar</button></>}

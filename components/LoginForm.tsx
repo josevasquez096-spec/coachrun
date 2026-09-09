@@ -57,7 +57,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }
 
   return (
     <main className="shell" style={{ paddingTop: 48 }}>
-      <div className="brand" style={{ fontSize: 34 }}>Coach<span>Run</span></div>
+      <div className="brand" style={{ fontSize: 34 }}>MyCoach<span>Runs</span></div>
       <p className="muted" style={{ marginTop: 4 }}>Tu entrenador te pone el plan. Tú sales a correr.</p>
 
       {sesionRota && (

@@ -2,7 +2,7 @@ export type Point = { lat: number; lng: number; t: number; alt?: number; acc?: n
 
 export function toGpx(points: Point[], name: string) {
   const trk = points.map((p) => `<trkpt lat="${p.lat}" lon="${p.lng}">${p.alt != null ? `<ele>${p.alt}</ele>` : ''}<time>${new Date(p.t).toISOString()}</time></trkpt>`).join('');
-  return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="CoachRun" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${name}</name><trkseg>${trk}</trkseg></trk></gpx>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="MyCoachRuns" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${name}</name><trkseg>${trk}</trkseg></trk></gpx>`;
 }
 
 /** Distancia haversine en metros. */

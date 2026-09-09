@@ -16,7 +16,7 @@ export default async function Coach() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar"><div className="brand">Coach<span>Run</span></div><span className="muted">{profile?.full_name}</span></div>
+      <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{profile?.full_name}</span></div>
       <h1>Alumnos</h1>
       <InviteLink coachId={user.id} />
       <div className="athlete-list">

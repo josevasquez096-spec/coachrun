@@ -15,7 +15,7 @@ self.addEventListener('fetch', (e) => {
 });
 
 self.addEventListener('push', (e) => {
-  let d = { title: 'CoachRun', body: '', url: '/athlete' };
+  let d = { title: 'MyCoachRuns', body: '', url: '/athlete' };
   try { d = { ...d, ...e.data.json() }; } catch { if (e.data) d.body = e.data.text(); }
   e.waitUntil(self.registration.showNotification(d.title, {
     body: d.body, icon: '/icons/icon-192.png', badge: '/icons/icon-192.png',

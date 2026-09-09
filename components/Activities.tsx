@@ -25,7 +25,7 @@ function Splits({ a }: { a: Act }) {
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 3 }}>
             <span className="muted" style={{ width: 20 }}>{i + 1}</span>
             <div style={{ flex: 1, height: 14, background: 'var(--bg)', borderRadius: 4 }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--flare)', borderRadius: 4 }} />
+              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--lima)', borderRadius: 4 }} />
             </div>
             <span style={{ width: 46, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtPace(p)}</span>
             {s.average_heartrate ? <span className="muted" style={{ width: 46, textAlign: 'right' }}>{Math.round(s.average_heartrate)}</span> : null}
@@ -71,7 +71,7 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                       <div className="act-title">{a.name ?? 'Actividad'}</div>
                       <div className="muted" style={{ fontSize: 13 }}>
                         {d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })} · {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                        {' · '}<span className={a.source === 'strava' ? 'strava' : 'muted'}>{a.source === 'strava' ? 'Strava' : 'CoachRun'}</span>
+                        {' · '}<span className={a.source === 'strava' ? 'strava' : 'muted'}>{a.source === 'strava' ? 'Strava' : 'MyCoachRuns'}</span>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>

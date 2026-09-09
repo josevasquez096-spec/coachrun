@@ -113,7 +113,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
       )}
 
       {steps.length > 0 && step && S.estado !== 'idle' && (
-        <div className="card" style={{ marginBottom: 12, borderColor: 'var(--flare)', borderWidth: 2 }}>
+        <div className="card" style={{ marginBottom: 12, borderColor: 'var(--ink)', borderWidth: 2 }}>
           <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>FASE {idx + 1} DE {steps.length}</div>
           <div style={{ fontSize: 19, fontWeight: 800, margin: '2px 0 4px' }}>{step.name}</div>
           <div className="muted" style={{ fontSize: 14 }}>
@@ -124,15 +124,15 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
             {zonaObjetivo ? ` · zona ${zonaObjetivo.n} (${zonaObjetivo.min}–${zonaObjetivo.max} ppm)` : ''}
           </div>
           <div style={{ height: 8, background: 'var(--bg)', borderRadius: 999, marginTop: 8, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${stepPct}%`, background: 'var(--flare)', transition: 'width .3s' }} />
+            <div style={{ height: '100%', width: `${stepPct}%`, background: 'var(--lima)', transition: 'width .3s' }} />
           </div>
           {onTarget && (
-            <div style={{ marginTop: 8, fontWeight: 700, fontSize: 14, color: onTarget === 'en ritmo' ? 'var(--go)' : 'var(--flare-ink)' }}>
+            <div style={{ marginTop: 8, fontWeight: 700, fontSize: 14, color: onTarget === 'en ritmo' ? 'var(--verde-txt)' : 'var(--alerta)' }}>
               {onTarget === 'en ritmo' ? '✓ En ritmo' : onTarget === 'rápido' ? '▲ Vas rápido, afloja' : '▼ Vas lento, aprieta'} · {fmtPace(S.recentPace)} /km
             </div>
           )}
           {zonaObjetivo && S.hr && (
-            <div style={{ marginTop: 6, fontWeight: 700, fontSize: 14, color: S.hr >= zonaObjetivo.min && S.hr <= zonaObjetivo.max ? 'var(--go)' : 'var(--flare-ink)' }}>
+            <div style={{ marginTop: 6, fontWeight: 700, fontSize: 14, color: S.hr >= zonaObjetivo.min && S.hr <= zonaObjetivo.max ? 'var(--verde-txt)' : 'var(--alerta)' }}>
               {S.hr >= zonaObjetivo.min && S.hr <= zonaObjetivo.max ? '✓ En zona' : S.hr > zonaObjetivo.max ? '▲ Pulso alto' : '▼ Pulso bajo'} · {S.hr} ppm
             </div>
           )}
@@ -143,7 +143,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
       )}
 
       {steps.length > 0 && S.estado !== 'idle' && idx >= steps.length && (
-        <div className="card" style={{ marginBottom: 12, borderColor: 'var(--go)', borderWidth: 2 }}>
+        <div className="card" style={{ marginBottom: 12, borderColor: 'var(--verde-txt)', borderWidth: 2 }}>
           <b>Entrenamiento completado.</b>
           <div className="muted" style={{ fontSize: 14 }}>Puedes seguir corriendo o pulsar Terminar.</div>
         </div>
@@ -192,7 +192,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
 
         {S.estado === 'paused' && <>
           <button className="btn go block" onClick={ses.continuar}>Continuar</button>
-          <button className="btn flare block" onClick={ses.terminar}>Terminar</button>
+          <button className="btn stop block" onClick={ses.terminar}>Terminar</button>
         </>}
 
         {S.estado === 'done' && <>
@@ -215,7 +215,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
             )}
           </div>
           <button className="btn flare block" onClick={() => ses.guardar(hasStrava)} disabled={S.pts.length < 2}>
-            {hasStrava && S.subirStrava ? 'Guardar y subir a Strava' : 'Guardar solo en CoachRun'}
+            {hasStrava && S.subirStrava ? 'Guardar y subir a Strava' : 'Guardar solo en MyCoachRuns'}
           </button>
           <button className="btn ghost block" onClick={() => { if (confirm('¿Descartar esta carrera? No se podrá recuperar.')) ses.descartar(); }}>Descartar</button>
         </>}
