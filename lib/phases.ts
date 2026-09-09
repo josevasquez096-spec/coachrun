@@ -15,6 +15,7 @@ export type Phase = {
   seconds?: number;
   paceLow?: number;   // seg/km, extremo rápido
   paceHigh?: number;  // seg/km, extremo lento
+  hrZone?: number;    // zona de pulso objetivo (1-5), alternativa al ritmo
   times?: number;     // repeticiones del bloque (series)
   rest?: Rest;        // recuperación entre repeticiones
   restAfter?: boolean; // incluir recuperación también tras la última repetición
@@ -22,7 +23,7 @@ export type Phase = {
 
 export type Step = {
   name: string; kind: Phase['kind']; mode: 'distance' | 'time';
-  meters?: number; seconds?: number; paceLow?: number; paceHigh?: number;
+  meters?: number; seconds?: number; paceLow?: number; paceHigh?: number; hrZone?: number;
 };
 
 export const KIND_LABEL: Record<Phase['kind'], string> = {
@@ -55,7 +56,7 @@ export function expand(phases: Phase[]): Step[] {
       out.push({
         name: times > 1 ? `${p.name} ${i + 1}/${times}` : p.name,
         kind: p.kind, mode: p.mode, meters: p.meters, seconds: p.seconds,
-        paceLow: p.paceLow, paceHigh: p.paceHigh,
+        paceLow: p.paceLow, paceHigh: p.paceHigh, hrZone: p.hrZone,
       });
       const isLast = i === times - 1;
       if (p.rest && (!isLast || p.restAfter)) {
@@ -84,8 +85,9 @@ export function describe(p: Phase) {
   const dur = fmtAmount(p.mode, p.meters, p.seconds);
   const pace = p.paceLow || p.paceHigh
     ? ` a ${[fmtPaceStr(p.paceLow), fmtPaceStr(p.paceHigh)].filter(Boolean).join('–')} /km` : '';
+  const zona = p.hrZone ? ` · zona ${p.hrZone}` : '';
   const times = (p.times ?? 1) > 1 ? `${p.times}× ` : '';
   const rest = p.rest
     ? ` · recuperación ${fmtAmount(p.rest.mode, p.rest.meters, p.rest.seconds)}${p.rest.activo === false ? ' parado' : ''}` : '';
-  return `${times}${dur}${pace}${rest}`;
+  return `${times}${dur}${pace}${zona}${rest}`;
 }

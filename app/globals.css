@@ -120,3 +120,27 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; margin-bottom: 18px; }
 .tabs a { flex: 1; text-align: center; padding: 8px; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--ink-2); }
 .tabs a.on { background: var(--ink); color: #fff; }
+
+/* ---------- Selector de entrenamiento y casillas ---------- */
+.elige { display: block; width: 100%; text-align: left; margin-bottom: 6px; padding: 10px 12px; cursor: pointer;
+  border-radius: 10px; border: 2px solid var(--line); background: transparent; }
+.elige.on { border-color: var(--flare); background: var(--track); }
+.check { display: flex; gap: 10px; align-items: center; font-size: 14px; margin: 8px 0; }
+.check input { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ---------- Esfuerzo percibido ---------- */
+.rpe { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 6px; }
+.rpe button { padding: 9px 0; border-radius: 8px; border: 1px solid var(--line); background: var(--surface);
+  font-weight: 700; font-size: 13px; cursor: pointer; }
+.rpe button.on { background: var(--flare); border-color: var(--flare); color: #fff; }
+
+/* ---------- Chat ---------- */
+.chat { display: flex; flex-direction: column; gap: 4px; min-height: 40vh; max-height: 58vh; overflow-y: auto;
+  padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.chat-dia { text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink-2); margin: 12px 0 6px; }
+.burbuja { max-width: 82%; padding: 9px 12px 18px; border-radius: 14px 14px 14px 4px; background: var(--bg);
+  font-size: 14.5px; position: relative; margin-bottom: 4px; white-space: pre-wrap; word-break: break-word; }
+.burbuja.mia { margin-left: auto; background: var(--track); border-radius: 14px 14px 4px 14px; }
+.burbuja .hora { position: absolute; right: 10px; bottom: 4px; font-size: 10.5px; color: var(--ink-2); }
+.chat-envio { display: flex; gap: 8px; margin-top: 10px; align-items: flex-end; }
+.chat-envio textarea { flex: 1; padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 12px; resize: none; font-family: inherit; }

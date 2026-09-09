@@ -2,11 +2,12 @@
 import { useState } from 'react';
 import { fmtPace, fmtTime } from '@/lib/format';
 import ActivityOverlay from './ActivityOverlay';
+import { RPE_LABEL } from '@/lib/zones';
 
 export type Act = {
   id: string; workout_id: string | null; name: string | null; started_at: string;
   distance_m: number | null; moving_time_s: number | null; avg_hr: number | null;
-  source: string; polyline: string | null; raw: any;
+  source: string; polyline: string | null; raw: any; rpe?: number | null; notes?: string | null;
 };
 
 function Splits({ a }: { a: Act }) {
@@ -89,6 +90,12 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                         {a.raw?.total_elevation_gain ? <div><b>{Math.round(a.raw.total_elevation_gain)}</b><small>m desnivel</small></div> : null}
                         {a.raw?.calories ? <div><b>{Math.round(a.raw.calories)}</b><small>kcal</small></div> : null}
                       </div>
+                      {(a.rpe || a.notes) && (
+                        <div style={{ marginTop: 12, paddingLeft: 10, borderLeft: '3px solid var(--track)' }}>
+                          {a.rpe ? <div style={{ fontSize: 13 }}><b>Esfuerzo {a.rpe}/10</b> · {RPE_LABEL[a.rpe]}</div> : null}
+                          {a.notes ? <div className="muted" style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{a.notes}</div> : null}
+                        </div>
+                      )}
                       <Splits a={a} />
                       {propias && <ActivityOverlay a={a} />}
                       {a.raw?.id && a.source === 'strava' && (

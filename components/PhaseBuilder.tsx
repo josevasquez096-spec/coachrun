@@ -8,12 +8,12 @@ type Draft = {
   name: string; kind: Phase['kind']; mode: 'distance' | 'time'; amount: string;
   paceLow: string; paceHigh: string; times: string;
   hasRest: boolean; restName: string; restMode: 'distance' | 'time'; restAmount: string; restActivo: boolean;
-  restAfter: boolean;
+  restAfter: boolean; hrZone: string;
 };
 
 const empty: Draft = {
   name: '', kind: 'active', mode: 'distance', amount: '', paceLow: '', paceHigh: '', times: '1',
-  hasRest: false, restName: '', restMode: 'time', restAmount: '', restActivo: true, restAfter: false,
+  hasRest: false, restName: '', restMode: 'time', restAmount: '', restActivo: true, restAfter: false, hrZone: '',
 };
 
 function toDraft(p: Phase): Draft {
@@ -28,6 +28,7 @@ function toDraft(p: Phase): Draft {
     restAmount: p.rest ? String(p.rest.mode === 'time' ? (p.rest.seconds ?? 0) / 60 : (p.rest.meters ?? 0) / 1000) : '',
     restActivo: p.rest?.activo !== false,
     restAfter: !!p.restAfter,
+    hrZone: p.hrZone ? String(p.hrZone) : '',
   };
 }
 
@@ -39,6 +40,7 @@ function fromDraft(d: Draft, id: string): Phase {
     meters: d.mode === 'distance' ? Math.round(amount * 1000) : undefined,
     seconds: d.mode === 'time' ? Math.round(amount * 60) : undefined,
     paceLow: parsePace(d.paceLow), paceHigh: parsePace(d.paceHigh),
+    hrZone: d.hrZone ? Number(d.hrZone) : undefined,
     times,
   };
   if (d.hasRest && d.restAmount) {
@@ -146,6 +148,15 @@ function Form({ d, set, times, onCommit, onCancel, label }: {
         <div className="field"><label>Ritmo lento</label>
           <input value={d.paceHigh} onChange={(e) => set('paceHigh', e.target.value)} placeholder="3:55" /></div>
       </div>
+      <div className="field"><label>Zona de pulso (opcional)</label>
+        <select value={d.hrZone} onChange={(e) => set('hrZone', e.target.value)}>
+          <option value="">Sin zona objetivo</option>
+          <option value="1">Zona 1 — Recuperación</option>
+          <option value="2">Zona 2 — Aeróbico suave</option>
+          <option value="3">Zona 3 — Aeróbico fuerte</option>
+          <option value="4">Zona 4 — Umbral</option>
+          <option value="5">Zona 5 — Máximo</option>
+        </select></div>
 
       {times > 1 && (
         <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 4 }}>
