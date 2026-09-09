@@ -15,7 +15,7 @@ export default async function AthleteHome() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar"><div className="brand">Coach<span>Run</span></div><span className="muted">{profile?.full_name}</span></div>
+      <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{profile?.full_name}</span></div>
       <h1>Mi plan</h1>
       {!profile?.strava_athlete_id && <p className="notice">Conecta Strava para que tus carreras se sincronicen solas. <Link href="/api/strava/connect" style={{ textDecoration: 'underline' }}>Conectar</Link></p>}
       {!profile?.coach_id && <p className="notice">Todavía no estás vinculado a un entrenador. Pídele su enlace de invitación.</p>}

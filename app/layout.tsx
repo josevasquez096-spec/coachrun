@@ -8,13 +8,13 @@ import SW from '@/components/SW';
 const archivo = Archivo({ subsets: ['latin'], weight: ['400', '700', '800'], display: 'swap', variable: '--fuente' });
 
 export const metadata: Metadata = {
-  title: 'CoachRun',
+  title: 'MyCoachRuns',
   description: 'Entrenamientos de running asignados por tu entrenador',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'CoachRun' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'MyCoachRuns' },
   icons: { apple: '/icons/icon-192.png' },
 };
-export const viewport: Viewport = { themeColor: '#1B2233', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
+export const viewport: Viewport = { themeColor: '#0E1210', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,4 +1,7 @@
-# CoachRun — contexto del proyecto
+# MyCoachRuns — contexto del proyecto
+
+Antes se llamaba CoachRun; el nombre cambió en la v4 (el repo y el dominio de
+Vercel siguen diciendo `coachrun`, eso no se toca).
 
 App de entrenamiento para un entrenador de running y su grupo. El coach asigna
 sesiones estructuradas, los atletas las ven en el teléfono, graban con GPS o con
@@ -7,6 +10,21 @@ reloj, y todo se sincroniza con Strava.
 - Producción: https://coachrun-delta.vercel.app
 - Repo: github.com/josevasquez096-spec/coachrun (rama `main`, deploy automático en Vercel)
 - Autoría: JVasquez · Instagram jvasquez324 · Strava athlete 145304552
+
+## Colores (v4)
+Blanco, negro y el verde del logo. **El verde está en una sola línea**, `--verde`
+en `app/globals.css`; cambiarla cambia toda la app, incluidos el trazo del mapa y
+la imagen para compartir. `--verde-ink` es la versión oscura para texto pequeño
+sobre blanco: el verde vivo no llega al contraste mínimo en letra chica.
+
+El naranja (`--alerta`) y el rojo (`--rojo`) **no son de la marca**, son señales:
+naranja para "te saliste del objetivo" y para el botón de Terminar, rojo solo para
+los avisos de mensajes sin leer. Si el verde fuese también la alerta, "Continuar" y
+"Terminar" se verían iguales.
+
+Leaflet (`RunMap`) y el canvas (`ActivityOverlay`) no entienden las variables de
+CSS: allí el verde está repetido como constante `VERDE`. Si se cambia la marca,
+hay que cambiarlo en esos dos sitios también.
 
 ## Cómo hablar conmigo
 El dueño del proyecto no es programador. Explica los pasos en español, en

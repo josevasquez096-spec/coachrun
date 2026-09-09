@@ -8,7 +8,7 @@ import TabBarFantasma from '@/components/TabBarFantasma';
 export default function Cargando() {
   return (
     <main className="shell">
-      <div className="topbar"><div className="brand">Coach<span>Run</span></div></div>
+      <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div></div>
       <div className="hueso" style={{ height: 30, width: '45%', marginBottom: 16 }} />
       <div className="hueso" style={{ height: 88, marginBottom: 10 }} />
       <div className="hueso" style={{ height: 88, marginBottom: 10 }} />

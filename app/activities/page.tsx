@@ -16,7 +16,7 @@ export default async function ActivitiesPage() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar"><div className="brand">Coach<span>Run</span></div><span className="muted">{total.toFixed(0)} km en total</span></div>
+      <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{total.toFixed(0)} km en total</span></div>
       <h1>Actividades</h1>
       <Activities acts={lista} />
       <Footer />

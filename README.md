@@ -1,4 +1,4 @@
-# CoachRun
+# MyCoachRuns
 
 PWA para entrenadores de running: asignas entrenamientos a cada alumno, ellos los ven en su plan, graban con GPS desde la app o con reloj/Strava, y todo se sincroniza.
 

@@ -1,6 +1,27 @@
 :root {
-  --bg: #EEF1F5; --surface: #FFFFFF; --ink: #1B2233; --ink-2: #5B6475; --line: #D5DAE3;
-  --flare: #FF5A1F; --flare-ink: #B33A0C; --go: #1E8E5A; --track: #FFE9E0;
+  /* ---------------------------------------------------------------
+     Colores de MyCoachRuns: blanco, negro y el verde del logo.
+
+     EL VERDE DE LA MARCA ESTÁ EN UN SOLO SITIO, la línea --verde de aquí
+     debajo. Cambiándola cambia toda la app: botones, pestañas, mapa,
+     imagen para compartir. --verde-ink es la versión oscura, la que se
+     usa para texto pequeño sobre blanco (el verde vivo no se lee bien
+     en letra chica).
+
+     El naranja y el rojo NO son de la marca: son señales. Naranja para
+     "te has salido del objetivo" y para terminar la actividad; rojo solo
+     para los avisos de mensajes sin leer. Si el verde fuese también la
+     señal de alerta, "Continuar" y "Terminar" se verían iguales.
+     --------------------------------------------------------------- */
+  --verde: #12A85B;
+  --verde-ink: #0A7A41;
+  --verde-suave: #E4F5EB;
+
+  --bg: #F2F4F3; --surface: #FFFFFF; --ink: #0E1210; --ink-2: #5C6560; --line: #DBE2DD;
+  --alerta: #C2410C; --alerta-suave: #FDEBE1; --rojo: #D92D20;
+
+  /* Nombres antiguos, para no reescribir media app. --flare es el acento. */
+  --flare: var(--verde); --flare-ink: var(--verde-ink); --track: var(--verde-suave); --go: var(--verde);
   --radius: 14px;
 }
 * { box-sizing: border-box; }
@@ -20,7 +41,8 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: 1.5px solid var(--ink); background: var(--ink); color: #fff; font-weight: 700; cursor: pointer; }
 .btn.ghost { background: transparent; color: var(--ink); }
 .btn.flare { background: var(--flare); border-color: var(--flare); }
-.btn.go { background: var(--go); border-color: var(--go); }
+.btn.go { background: var(--verde); border-color: var(--verde); }
+.btn.stop { background: var(--alerta); border-color: var(--alerta); }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn.block { width: 100%; }
 
@@ -45,8 +67,8 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .wk .targets { color: var(--ink-2); font-size: 14px; margin-top: 2px; }
 .wk .desc { font-size: 14px; margin-top: 6px; white-space: pre-wrap; }
 .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--track); color: var(--flare-ink); }
-.pill.done { background: #DDF3E7; color: var(--go); }
-.pill.rest { background: #E6E9EF; color: var(--ink-2); }
+.pill.done { background: var(--verde-suave); color: var(--verde-ink); }
+.pill.rest { background: #E8EBE9; color: var(--ink-2); }
 
 /* Grabar: métricas en grande sobre el mapa */
 .rec-map { height: 46vh; width: 100%; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
@@ -81,7 +103,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
 }
 .wo-hoy { border-color: var(--flare); border-width: 2px; padding: 13px; }
-.wo-hecho { background: #FBFCFD; }
+.wo-hecho { background: #FAFCFB; }
 .wo-hecho .wo-title { color: var(--ink-2); }
 .wo-day {
   width: 44px; flex-shrink: 0; text-align: center; line-height: 1.05;
@@ -100,7 +122,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
   border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: none;
 }
 .chip:active { background: var(--bg); }
-.chip.danger { color: var(--flare-ink); border-color: var(--track); }
+.chip.danger { color: var(--alerta); border-color: var(--alerta-suave); }
 
 .fases { list-style: none; margin: 10px 0 0; padding: 10px; background: var(--bg); border-radius: 10px; }
 .fases li { display: flex; gap: 10px; padding: 5px 0; font-size: 14px; }
@@ -161,15 +183,15 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 /* ---------- Avisos de la barra de pestañas ---------- */
 .tabbar a { position: relative; }
 .globo { position: absolute; top: 0; left: 50%; margin-left: 6px; min-width: 17px; height: 17px; padding: 0 4px;
-  border-radius: 999px; background: #E01B24; color: #fff; font-size: 10.5px; font-weight: 800; line-height: 17px;
+  border-radius: 999px; background: var(--rojo); color: #fff; font-size: 10.5px; font-weight: 800; line-height: 17px;
   text-align: center; box-shadow: 0 0 0 2px var(--surface); }
 .punto { position: absolute; top: 2px; left: 50%; margin-left: 8px; width: 9px; height: 9px; border-radius: 50%;
-  background: #E01B24; box-shadow: 0 0 0 2px var(--surface); }
+  background: var(--rojo); box-shadow: 0 0 0 2px var(--surface); }
 .punto.grabando { background: var(--go); animation: latido 1.6s ease-in-out infinite; }
 @keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* Contador de mensajes sin leer en la lista de alumnos */
-.sin-leer { min-width: 21px; height: 21px; padding: 0 6px; border-radius: 999px; background: #E01B24; color: #fff;
+.sin-leer { min-width: 21px; height: 21px; padding: 0 6px; border-radius: 999px; background: var(--rojo); color: #fff;
   font-size: 12px; font-weight: 800; line-height: 21px; text-align: center; }
 
 /* ---------- Pantalla de carga ---------- */

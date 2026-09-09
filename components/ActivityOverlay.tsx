@@ -3,6 +3,9 @@ import { useRef, useState } from 'react';
 import { fmtPace, fmtTime } from '@/lib/format';
 import { decodePolyline } from '@/lib/polyline';
 
+// El canvas no entiende las variables de CSS: mismo verde de la paleta.
+const VERDE = '#12A85B';
+
 type A = { name: string | null; started_at: string; distance_m: number | null; moving_time_s: number | null; avg_hr: number | null; polyline: string | null };
 
 /** Genera una imagen cuadrada con la foto del usuario y los datos encima. */
@@ -54,7 +57,7 @@ export default function ActivityOverlay({ a }: { a: A }) {
           const box = 300, pad = 56;
           const span = Math.max(maxLat - minLat, maxLng - minLng) || 1;
           ctx.save();
-          ctx.strokeStyle = '#FF5A1F'; ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          ctx.strokeStyle = VERDE; ctx.lineWidth = 7; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
           ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 10;
           ctx.beginPath();
           pts.forEach(([la, ln], i) => {
@@ -75,7 +78,7 @@ export default function ActivityOverlay({ a }: { a: A }) {
     ctx.font = '800 152px Archivo, system-ui, sans-serif';
     ctx.fillText(km.toFixed(2), 62, S - 250);
     ctx.font = '700 46px Archivo, system-ui, sans-serif';
-    ctx.fillStyle = '#FF5A1F';
+    ctx.fillStyle = VERDE;
     ctx.fillText('KM', 66 + ctx.measureText('').width + 0, S - 190);
 
     // Fila de datos
@@ -97,7 +100,7 @@ export default function ActivityOverlay({ a }: { a: A }) {
     // Marca
     ctx.fillStyle = 'rgba(255,255,255,.75)';
     ctx.font = '700 30px Archivo, system-ui, sans-serif';
-    const marca = 'CoachRun · By JVasquez';
+    const marca = 'MyCoachRuns · By JVasquez';
     ctx.fillText(marca, S - 62 - ctx.measureText(marca).width, S - 40);
 
     const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), 'image/jpeg', 0.92));

@@ -297,7 +297,7 @@ export async function guardar(hasStrava: boolean) {
     }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { s.estado = 'done'; s.msg = j.error ?? 'No se pudo guardar.'; emitir(); return; }
-    s.msg = hasStrava && s.subirStrava ? `Guardado. Strava: ${j.uploadStatus}` : 'Guardado en CoachRun.';
+    s.msg = hasStrava && s.subirStrava ? `Guardado. Strava: ${j.uploadStatus}` : 'Guardado en MyCoachRuns.';
     s.estado = 'saved';
     borrarLocal();
   } catch {

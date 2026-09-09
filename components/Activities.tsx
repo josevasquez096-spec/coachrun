@@ -71,7 +71,7 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                       <div className="act-title">{a.name ?? 'Actividad'}</div>
                       <div className="muted" style={{ fontSize: 13 }}>
                         {d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })} · {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                        {' · '}<span className={a.source === 'strava' ? 'strava' : 'muted'}>{a.source === 'strava' ? 'Strava' : 'CoachRun'}</span>
+                        {' · '}<span className={a.source === 'strava' ? 'strava' : 'muted'}>{a.source === 'strava' ? 'Strava' : 'MyCoachRuns'}</span>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>

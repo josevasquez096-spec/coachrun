@@ -4,14 +4,17 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Point } from '@/lib/geo';
 
+// Los mismos de la paleta; Leaflet no entiende las variables de CSS.
+const VERDE = '#12A85B', NEGRO = '#0E1210';
+
 export default function RunMap({ points }: { points: Point[] }) {
   const el = useRef<HTMLDivElement>(null); const map = useRef<L.Map | null>(null); const line = useRef<L.Polyline | null>(null); const dot = useRef<L.CircleMarker | null>(null);
   useEffect(() => {
     if (!el.current || map.current) return;
     map.current = L.map(el.current, { zoomControl: false, attributionControl: true }).setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map.current);
-    line.current = L.polyline([], { color: '#FF5A1F', weight: 5 }).addTo(map.current);
-    dot.current = L.circleMarker([0, 0], { radius: 7, color: '#fff', weight: 2, fillColor: '#1B2233', fillOpacity: 1 }).addTo(map.current);
+    line.current = L.polyline([], { color: VERDE, weight: 5 }).addTo(map.current);
+    dot.current = L.circleMarker([0, 0], { radius: 7, color: '#fff', weight: 2, fillColor: NEGRO, fillOpacity: 1 }).addTo(map.current);
     navigator.geolocation?.getCurrentPosition((p) => map.current?.setView([p.coords.latitude, p.coords.longitude], 16));
   }, []);
   useEffect(() => {
