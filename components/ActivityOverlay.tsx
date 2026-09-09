@@ -4,7 +4,7 @@ import { fmtPace, fmtTime } from '@/lib/format';
 import { decodePolyline } from '@/lib/polyline';
 
 // El canvas no entiende las variables de CSS: mismo verde de la paleta.
-const VERDE = '#12A85B';
+const VERDE = '#94F420';
 
 type A = { name: string | null; started_at: string; distance_m: number | null; moving_time_s: number | null; avg_hr: number | null; polyline: string | null };
 

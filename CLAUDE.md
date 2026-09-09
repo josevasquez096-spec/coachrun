@@ -12,19 +12,34 @@ reloj, y todo se sincroniza con Strava.
 - Autoría: JVasquez · Instagram jvasquez324 · Strava athlete 145304552
 
 ## Colores (v4)
-Blanco, negro y el verde del logo. **El verde está en una sola línea**, `--verde`
-en `app/globals.css`; cambiarla cambia toda la app, incluidos el trazo del mapa y
-la imagen para compartir. `--verde-ink` es la versión oscura para texto pequeño
-sobre blanco: el verde vivo no llega al contraste mínimo en letra chica.
+Del logo: blanco, negro y lima. Definidos en `app/globals.css`.
 
-El naranja (`--alerta`) y el rojo (`--rojo`) **no son de la marca**, son señales:
-naranja para "te saliste del objetivo" y para el botón de Terminar, rojo solo para
-los avisos de mensajes sin leer. Si el verde fuese también la alerta, "Continuar" y
-"Terminar" se verían iguales.
+- `--lima: #94F420` es **el** verde del logo. Es tan brillante que sobre blanco
+  **no se lee como letra** (contraste 1,4:1). Solo vale de relleno, y siempre con
+  el texto negro encima, nunca blanco. Botones, barra de progreso, RPE elegido,
+  trazo del mapa.
+- `--verde-txt: #3D680D` es para letra verde sobre fondo claro: la "Runs" de la
+  marca, la pestaña activa, "En ritmo". Es el mismo tono, oscurecido.
+- `--verde-suave: #EDFBD9` para fondos con tinte, siempre con texto oscuro.
+- Los bordes de énfasis (el entreno de hoy, la fase en curso) van en **negro**,
+  no en lima: un borde lima sobre blanco queda lavado.
+- `--alerta` (naranja) y `--rojo` **no son de la marca**, son señales: naranja
+  para "te saliste del objetivo" y para Terminar, rojo solo para los mensajes sin
+  leer. Si el verde fuese también la alerta, "Continuar" y "Terminar" se verían
+  iguales, y están uno al lado del otro cuando el atleta para a mitad de serie.
+
+Se descartó el fondo oscuro (que sería lo más fiel al logo) porque la app se usa
+corriendo al sol, y ahí una pantalla clara se lee mucho mejor.
+
+Todas las combinaciones de texto llegan a 4,5:1. Si se cambia algún color, hay
+que volver a comprobarlo antes de subirlo.
 
 Leaflet (`RunMap`) y el canvas (`ActivityOverlay`) no entienden las variables de
-CSS: allí el verde está repetido como constante `VERDE`. Si se cambia la marca,
-hay que cambiarlo en esos dos sitios también.
+CSS: allí el lima está repetido como constante. El trazo del mapa lleva además
+un contorno negro por debajo, porque el lima solo se pierde sobre el mapa claro.
+
+Los iconos (`public/icons/`) salen del símbolo del logo (la M con el corredor)
+sobre negro, sin el nombre: en 192 px el texto no se leería.
 
 ## Cómo hablar conmigo
 El dueño del proyecto no es programador. Explica los pasos en español, en

@@ -93,7 +93,7 @@ export default function PhaseBuilder({ phases, onChange }: { phases: Phase[]; on
               <div className="muted" style={{ fontSize: 13 }}>{describe(p)}</div>
             </button>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, borderColor: 'var(--flare)', color: 'var(--flare-ink)' }}
+              <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, borderColor: 'var(--verde-txt)', color: 'var(--verde-txt)' }}
                 onClick={() => (editing === p.id ? setEditing(null) : startEdit(p))}>
                 {editing === p.id ? 'Cerrar' : 'Editar'}
               </button>

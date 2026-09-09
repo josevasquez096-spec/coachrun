@@ -1,27 +1,26 @@
 :root {
   /* ---------------------------------------------------------------
-     Colores de MyCoachRuns: blanco, negro y el verde del logo.
+     Colores de MyCoachRuns, sacados del logo: blanco, negro y lima.
 
-     EL VERDE DE LA MARCA ESTÁ EN UN SOLO SITIO, la línea --verde de aquí
-     debajo. Cambiándola cambia toda la app: botones, pestañas, mapa,
-     imagen para compartir. --verde-ink es la versión oscura, la que se
-     usa para texto pequeño sobre blanco (el verde vivo no se lee bien
-     en letra chica).
+     --lima es EL verde del logo, tal cual. Es tan brillante que sobre
+     blanco NO se lee: solo vale como relleno, y siempre con el texto
+     negro (--ink) encima, nunca blanco. Para letra verde sobre fondo
+     claro está --verde-txt, una versión oscura del mismo tono.
 
-     El naranja y el rojo NO son de la marca: son señales. Naranja para
-     "te has salido del objetivo" y para terminar la actividad; rojo solo
-     para los avisos de mensajes sin leer. Si el verde fuese también la
-     señal de alerta, "Continuar" y "Terminar" se verían iguales.
+     Naranja y rojo no son de la marca, son señales: naranja para
+     "te saliste del objetivo" y para Terminar, rojo solo para los
+     mensajes sin leer. Si el verde fuese también la alerta, "Continuar"
+     y "Terminar" se verían iguales.
      --------------------------------------------------------------- */
-  --verde: #12A85B;
-  --verde-ink: #0A7A41;
-  --verde-suave: #E4F5EB;
+  --lima: #94F420;
+  --verde-txt: #3D680D;
+  --verde-suave: #EDFBD9;
 
-  --bg: #F2F4F3; --surface: #FFFFFF; --ink: #0E1210; --ink-2: #5C6560; --line: #DBE2DD;
+  --bg: #F2F4F0; --surface: #FFFFFF; --ink: #0B0D0B; --ink-2: #5C6560; --line: #DDE2D8;
   --alerta: #C2410C; --alerta-suave: #FDEBE1; --rojo: #D92D20;
 
-  /* Nombres antiguos, para no reescribir media app. --flare es el acento. */
-  --flare: var(--verde); --flare-ink: var(--verde-ink); --track: var(--verde-suave); --go: var(--verde);
+  /* Nombres antiguos: --flare rellena, --flare-ink escribe. */
+  --flare: var(--lima); --flare-ink: var(--verde-txt); --track: var(--verde-suave); --go: var(--lima);
   --radius: 14px;
 }
 * { box-sizing: border-box; }
@@ -33,16 +32,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .shell { max-width: 560px; margin: 0 auto; padding: 20px 16px 96px; }
 .topbar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
 .brand { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
-.brand span { color: var(--flare); }
+.brand span { color: var(--verde-txt); }
 .muted { color: var(--ink-2); }
 h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
 h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: 1.5px solid var(--ink); background: var(--ink); color: #fff; font-weight: 700; cursor: pointer; }
 .btn.ghost { background: transparent; color: var(--ink); }
-.btn.flare { background: var(--flare); border-color: var(--flare); }
-.btn.go { background: var(--verde); border-color: var(--verde); }
-.btn.stop { background: var(--alerta); border-color: var(--alerta); }
+.btn.flare { background: var(--lima); border-color: var(--lima); color: var(--ink); }
+.btn.go { background: var(--lima); border-color: var(--lima); color: var(--ink); }
+.btn.stop { background: var(--alerta); border-color: var(--alerta); color: #fff; }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn.block { width: 100%; }
 
@@ -52,7 +51,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .field { display: grid; gap: 6px; margin-bottom: 12px; }
 .field label { font-size: 13px; color: var(--ink-2); }
 .field input, .field select, .field textarea { padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; width: 100%; }
-.field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--flare); outline-offset: 1px; border-color: transparent; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--verde-txt); outline-offset: 1px; border-color: transparent; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 /* Plan del atleta: una línea de tiempo vertical con el día como marcador */
@@ -61,7 +60,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .day .when { text-align: right; line-height: 1.1; }
 .day .when b { display: block; font-size: 20px; }
 .day .when small { color: var(--ink-2); }
-.day.today .when b { color: var(--flare); }
+.day.today .when b { color: var(--verde-txt); }
 .wk { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .wk .title { font-weight: 700; }
 .wk .targets { color: var(--ink-2); font-size: 14px; margin-top: 2px; }
@@ -81,7 +80,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
 .tabbar a { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; color: var(--ink-2); padding: 6px 2px; }
-.tabbar a.on { color: var(--flare); }
+.tabbar a.on { color: var(--verde-txt); }
 
 .athlete-list a { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .athlete-list .name { font-weight: 700; }
@@ -102,7 +101,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
   display: flex; gap: 14px; padding: 14px; margin-bottom: 10px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
 }
-.wo-hoy { border-color: var(--flare); border-width: 2px; padding: 13px; }
+.wo-hoy { border-color: var(--ink); border-width: 2px; padding: 13px; }
 .wo-hecho { background: #FAFCFB; }
 .wo-hecho .wo-title { color: var(--ink-2); }
 .wo-day {
@@ -111,7 +110,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 }
 .wo-day b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.03em; }
 .wo-day small { color: var(--ink-2); font-size: 11px; text-transform: uppercase; }
-.wo-hoy .wo-day b { color: var(--flare); }
+.wo-hoy .wo-day b { color: var(--verde-txt); }
 .wo-title { font-size: 16px; font-weight: 700; margin: 6px 0 2px; }
 .wo-meta { color: var(--ink-2); font-size: 14px; font-variant-numeric: tabular-nums; }
 .wo-desc { font-size: 14px; white-space: pre-wrap; margin: 8px 0 0; padding-left: 10px; border-left: 2px solid var(--line); color: var(--ink-2); }
@@ -127,7 +126,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .fases { list-style: none; margin: 10px 0 0; padding: 10px; background: var(--bg); border-radius: 10px; }
 .fases li { display: flex; gap: 10px; padding: 5px 0; font-size: 14px; }
 .fases li + li { border-top: 1px solid var(--line); }
-.fases .n { color: var(--flare); font-weight: 800; width: 16px; flex-shrink: 0; }
+.fases .n { color: var(--verde-txt); font-weight: 800; width: 16px; flex-shrink: 0; }
 
 /* ---------- Actividades ---------- */
 .act { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
@@ -146,7 +145,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 /* ---------- Selector de entrenamiento y casillas ---------- */
 .elige { display: block; width: 100%; text-align: left; margin-bottom: 6px; padding: 10px 12px; cursor: pointer;
   border-radius: 10px; border: 2px solid var(--line); background: transparent; }
-.elige.on { border-color: var(--flare); background: var(--track); }
+.elige.on { border-color: var(--ink); background: var(--verde-suave); }
 .check { display: flex; gap: 10px; align-items: center; font-size: 14px; margin: 8px 0; }
 .check input { width: 18px; height: 18px; flex-shrink: 0; }
 
@@ -154,7 +153,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .rpe { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 6px; }
 .rpe button { padding: 9px 0; border-radius: 8px; border: 1px solid var(--line); background: var(--surface);
   font-weight: 700; font-size: 13px; cursor: pointer; }
-.rpe button.on { background: var(--flare); border-color: var(--flare); color: #fff; }
+.rpe button.on { background: var(--lima); border-color: var(--lima); color: var(--ink); }
 
 /* ---------- Chat ---------- */
 .chat { display: flex; flex-direction: column; gap: 4px; min-height: 40vh; max-height: 58vh; overflow-y: auto;
@@ -174,11 +173,11 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
 .fase-txt { display: flex; flex-direction: column; gap: 1px; }
 .fase-txt small { font-size: 12.5px; }
 .fase-fila.hecha { opacity: .5; }
-.fase-fila.hecha .fase-n { color: var(--go); }
+.fase-fila.hecha .fase-n { color: var(--verde-txt); }
 .fase-fila.hecha b { text-decoration: line-through; }
 .fase-fila.ahora { background: var(--track); border-radius: 8px; margin: 0 -8px; padding: 7px 8px; }
 .fase-fila.ahora + .fase-fila { border-top: 0; }
-.fase-fila.ahora .fase-n { color: var(--flare); }
+.fase-fila.ahora .fase-n { color: var(--verde-txt); }
 
 /* ---------- Avisos de la barra de pestañas ---------- */
 .tabbar a { position: relative; }
@@ -187,7 +186,7 @@ h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
   text-align: center; box-shadow: 0 0 0 2px var(--surface); }
 .punto { position: absolute; top: 2px; left: 50%; margin-left: 8px; width: 9px; height: 9px; border-radius: 50%;
   background: var(--rojo); box-shadow: 0 0 0 2px var(--surface); }
-.punto.grabando { background: var(--go); animation: latido 1.6s ease-in-out infinite; }
+.punto.grabando { background: var(--verde-txt); animation: latido 1.6s ease-in-out infinite; }
 @keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* Contador de mensajes sin leer en la lista de alumnos */

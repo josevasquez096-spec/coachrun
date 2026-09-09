@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'MyCoachRuns' },
   icons: { apple: '/icons/icon-192.png' },
 };
-export const viewport: Viewport = { themeColor: '#0E1210', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
+export const viewport: Viewport = { themeColor: '#0B0D0B', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

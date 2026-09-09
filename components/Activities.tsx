@@ -25,7 +25,7 @@ function Splits({ a }: { a: Act }) {
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 3 }}>
             <span className="muted" style={{ width: 20 }}>{i + 1}</span>
             <div style={{ flex: 1, height: 14, background: 'var(--bg)', borderRadius: 4 }}>
-              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--flare)', borderRadius: 4 }} />
+              <div style={{ height: '100%', width: `${pct}%`, background: 'var(--lima)', borderRadius: 4 }} />
             </div>
             <span style={{ width: 46, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtPace(p)}</span>
             {s.average_heartrate ? <span className="muted" style={{ width: 46, textAlign: 'right' }}>{Math.round(s.average_heartrate)}</span> : null}
