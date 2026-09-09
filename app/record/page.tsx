@@ -14,13 +14,12 @@ export default async function RecordPage() {
   const { data: pendientes } = await sb.from('workouts')
     .select('id,date,title,target_distance_km,target_pace,phases,completed,type')
     .eq('athlete_id', user.id).gte('date', iso(from)).lte('date', iso(to)).neq('type', 'rest').order('date');
-  const { data: hr } = await sb.from('profiles').select('max_hr,resting_hr').eq('id', user.id).maybeSingle();
 
   return (
     <main className="shell">
       <Refrescar />
       <h1>Grabar</h1>
-      <Recorder pendientes={pendientes ?? []} hasStrava={!!profile?.strava_athlete_id} perfil={hr ?? undefined} />
+      <Recorder pendientes={pendientes ?? []} hasStrava={!!profile?.strava_athlete_id} perfil={profile as any} />
       <Footer />
       <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
     </main>

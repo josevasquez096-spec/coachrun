@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/guard';
+import { aligerar } from '@/lib/actividad';
 import WorkoutForm from '@/components/WorkoutForm';
 import Plan from '@/components/Plan';
 import Activities from '@/components/Activities';
@@ -14,10 +15,18 @@ export const dynamic = 'force-dynamic';
 export default async function Athlete({ params, searchParams }: { params: { athleteId: string }; searchParams: { ver?: string } }) {
   const { sb, profile } = await requireUser();
   if (profile?.role !== 'coach') redirect('/athlete');
-  const { data: a } = await sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id').eq('id', params.athleteId).single();
-  const { data: workouts } = await sb.from('workouts').select('*').eq('athlete_id', params.athleteId).order('date');
-  const { data: acts } = await sb.from('activities').select('*').eq('athlete_id', params.athleteId).order('started_at', { ascending: false }).limit(60);
   const ver = searchParams.ver === 'actividades' ? 'actividades' : 'plan';
+
+  // Las dos consultas van a la vez, y solo se pide la lista de la pestaña que se
+  // está mirando: antes se traía el plan y las actividades siempre, aunque no se vieran.
+  const [{ data: a }, listas] = await Promise.all([
+    sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id').eq('id', params.athleteId).single(),
+    ver === 'plan'
+      ? sb.from('workouts').select('*').eq('athlete_id', params.athleteId).order('date')
+      : sb.from('activities').select('*').eq('athlete_id', params.athleteId).order('started_at', { ascending: false }).limit(60),
+  ]);
+  const workouts = ver === 'plan' ? (listas.data ?? []) : [];
+  const acts = ver === 'plan' ? [] : (listas.data ?? []).map(aligerar);
 
   return (
     <main className="shell">
@@ -41,10 +50,10 @@ export default async function Athlete({ params, searchParams }: { params: { athl
           <h2>Asignar entrenamiento</h2>
           <WorkoutForm athleteId={params.athleteId} />
           <h2>Plan</h2>
-          <Plan workouts={workouts ?? []} editable athleteId={params.athleteId} />
+          <Plan workouts={workouts} editable athleteId={params.athleteId} />
         </>
       ) : (
-        <Activities acts={acts ?? []} propias={false} />
+        <Activities acts={acts} propias={false} />
       )}
 
       <Footer />

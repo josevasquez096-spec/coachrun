@@ -86,11 +86,30 @@ aparecería como una ruta.
 - Al terminar, el atleta marca el esfuerzo percibido (RPE 1-10) y escribe notas.
   Ambos se guardan en `activities` y el coach los ve en la ficha.
 
+## Grabación de la carrera
+`lib/session.ts` es el motor y vive **fuera de React**, en el módulo. Así la
+carrera sigue viva al cambiar de pestaña: antes el cronómetro y el GPS colgaban
+del componente `Recorder` y se destruían al salir de "Grabar". La pantalla solo
+mira, con `useSyncExternalStore`. Regla: nada de estado de grabación dentro de
+componentes.
+
+- El tiempo se calcula con el reloj del sistema (`acumuladoMs` + `arranque`), no
+  contando interrupciones, porque el navegador ralentiza los temporizadores en
+  segundo plano.
+- Cada pocos segundos se guarda una copia en `localStorage` (`coachrun.sesion`).
+  Si la app se cierra, al volver la carrera aparece **en pausa**: el GPS estuvo
+  parado y no sabemos por dónde fue mientras tanto.
+- La barra de pestañas enseña un punto verde en "Grabar" mientras hay carrera.
+
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
 coach elige alumno con `?atleta=<id>`. La ruta comprueba que el atleta sea
 realmente del coach antes de leer o escribir. Al enviar, se manda un push al
 otro con URL `/chat`. El cliente refresca cada 12 s (no hay realtime).
+
+Los mensajes sin leer se cuentan en `/api/messages/unread` y se comparten con
+`lib/avisos.ts`, otro almacén de módulo: la barra se vuelve a montar en cada
+pantalla y así el número no parpadea. Se refresca cada 30 s y al volver a la app.
 
 ## Cosas que ya se rompieron (no repetir)
 - Fechas en UTC: usar `todayLocal()` de `lib/format.ts`. Con `toISOString()` el
@@ -107,6 +126,21 @@ otro con URL `/chat`. El cliente refresca cada 12 s (no hay realtime).
 - Dentro de `onPosition` del `Recorder` no se pueden leer estados de React: la
   función se registra una sola vez en `watchPosition` y se queda con los valores
   del arranque. Lo que haga falta ahí va en un `useRef`.
+
+## Que la app vaya fluida
+Todas las páginas son `force-dynamic` y cada una hace `requireUser()` (validar
+sesión + leer perfil) antes de su propia consulta. Eso son varias idas y vueltas
+por pestaña, así que:
+
+- `app/loading.tsx` enseña un esqueleto en cuanto se toca la pestaña. Sin él el
+  teléfono se quedaba con la pantalla anterior y el cambio parecía lento.
+- `aligerar()` de `lib/actividad.ts` recorta `activities.raw` antes de mandarlo al
+  teléfono. La respuesta entera de Strava son cientos de kilobytes por carrera.
+- El perfil trae ya `max_hr`/`resting_hr` desde `requireUser()`: no repetir esa
+  consulta en las pantallas.
+- La ficha del alumno pide **solo** la lista de la pestaña que se mira, y en paralelo.
+- La fuente va con `next/font` (servida desde el propio dominio). El `<link>` a
+  Google Fonts bloqueaba el primer dibujado.
 
 ## Límites conocidos
 - El navegador corta el GPS con la pantalla bloqueada (sobre todo iOS). Para

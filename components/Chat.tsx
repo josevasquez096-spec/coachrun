@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import * as avisos from '@/lib/avisos';
 
 export type Msg = { id: string; sender_id: string; body: string; created_at: string };
 
@@ -15,6 +16,8 @@ export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string
       const r = await fetch(`/api/messages?athleteId=${hilo.athleteId}&coachId=${hilo.coachId}`);
       const j = await r.json();
       if (r.ok) setMsgs(j.messages ?? []);
+      // Al leer el hilo se marcan como leídos: hay que bajar el globo rojo de la barra.
+      avisos.refrescar(scroll);
       if (scroll) setTimeout(() => fin.current?.scrollIntoView({ behavior: 'smooth' }), 60);
     } catch {}
     setCargando(false);
