@@ -118,9 +118,19 @@ pantalla y así el número no parpadea. Se refresca cada 30 s y al volver a la a
   `on delete set null` y anulando `workout_id` antes de borrar.
 - Errores silenciosos: toda operación de escritura debe mostrar el motivo real al
   usuario, no fallar sin decir nada.
-- GPS: descartar avances menores de 3 m perdía cientos de metros por kilómetro.
-  `acumular()` en `lib/geo.ts` los suma en lugar de tirarlos, y descarta los
-  saltos imposibles (más de 12 m/s).
+- GPS, marcar de menos: descartar avances menores de 3 m perdía cientos de metros
+  por kilómetro.
+- GPS, marcar de más: la solución anterior sumaba la distancia entre cada par de
+  puntos seguidos, así que el temblor del GPS se sumaba en vez de cancelarse.
+  Caminando 150 m reales marcaba 210. Ahora `medir()` de `lib/geo.ts` suaviza cada
+  punto y solo suma metros cuando te alejas de un **ancla** más que el ruido; el
+  ancla se mueve entonces al punto nuevo. Los temblores en el sitio no suman.
+  El peso del suavizado y el umbral están calibrados con `scripts/simular-gps.mjs`
+  (`node scripts/simular-gps.mjs`): **si se tocan, hay que volver a pasar esa
+  tabla**. Bajar el umbral devuelve el problema de marcar de más; subirlo empieza
+  a cortar las curvas cerradas.
+- La distancia guardada es la que midió el filtro durante la carrera, no una suma
+  de la traza hecha en el servidor: recalcularla allí volvía a inflarla.
 - Descargas de imágenes en iPhone: `<a download>` con blob no funciona; usar
   `navigator.share` con el fichero.
 - Dentro de `onPosition` del `Recorder` no se pueden leer estados de React: la

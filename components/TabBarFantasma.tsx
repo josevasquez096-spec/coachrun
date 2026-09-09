@@ -12,7 +12,7 @@ export default function TabBarFantasma() {
     try { if (localStorage.getItem('coachrun.role') === 'coach') setRole('coach'); } catch {}
   }, []);
   const tabs = role === 'coach'
-    ? ['Alumnos', 'Plan', 'Actividades', 'Grabar', 'Chat', 'Cuenta']
-    : ['Plan', 'Actividades', 'Grabar', 'Chat', 'Cuenta'];
+    ? ['Alumnos', 'Plan', 'Actividades', 'Iniciar', 'Chat', 'Cuenta']
+    : ['Plan', 'Actividades', 'Iniciar', 'Chat', 'Cuenta'];
   return <nav className="tabbar">{tabs.map((l) => <span key={l} style={{ flex: 1, textAlign: 'center', fontSize: 11.5, fontWeight: 700, color: 'var(--ink-2)', padding: '6px 2px' }}>{l}</span>)}</nav>;
 }

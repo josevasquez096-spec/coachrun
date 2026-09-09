@@ -15,8 +15,8 @@ export default function TabBar({ role }: { role: 'coach' | 'athlete' }) {
   useEffect(() => { try { localStorage.setItem('coachrun.role', role); } catch {} }, [role]);
 
   const tabs: [string, string][] = role === 'coach'
-    ? [['/coach', 'Alumnos'], ['/athlete', 'Plan'], ['/activities', 'Actividades'], ['/record', 'Grabar'], ['/chat', 'Chat'], ['/athlete/settings', 'Cuenta']]
-    : [['/athlete', 'Plan'], ['/activities', 'Actividades'], ['/record', 'Grabar'], ['/chat', 'Chat'], ['/athlete/settings', 'Cuenta']];
+    ? [['/coach', 'Alumnos'], ['/athlete', 'Plan'], ['/activities', 'Actividades'], ['/record', 'Iniciar'], ['/chat', 'Chat'], ['/athlete/settings', 'Cuenta']]
+    : [['/athlete', 'Plan'], ['/activities', 'Actividades'], ['/record', 'Iniciar'], ['/chat', 'Chat'], ['/athlete/settings', 'Cuenta']];
 
   return (
     <nav className="tabbar">
