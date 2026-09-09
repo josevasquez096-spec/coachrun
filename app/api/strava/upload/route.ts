@@ -1,26 +1,43 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
-import { toGpx, uploadGpx, haversine, type Point } from '@/lib/strava';
+import { toGpx, uploadGpx } from '@/lib/strava';
+import { distanciaTotal, type Point } from '@/lib/geo';
 
-// Recibe los puntos GPS grabados en la app, los guarda y los sube a Strava como GPX
 export async function POST(req: Request) {
   const { data: { user } } = await supabaseServer().auth.getUser();
-  if (!user) return NextResponse.json({}, { status: 401 });
-  const { points, name, workoutId, movingTime } = (await req.json()) as { points: Point[]; name: string; workoutId?: string; movingTime: number };
-  if (!points?.length) return NextResponse.json({ error: 'sin puntos' }, { status: 400 });
-  let dist = 0; for (let i = 1; i < points.length; i++) dist += haversine(points[i - 1], points[i]);
+  if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
+
+  const { points, name, workoutId, movingTime, subirStrava, rpe, notas, avgHr } =
+    (await req.json()) as {
+      points: Point[]; name: string; workoutId?: string; movingTime: number;
+      subirStrava?: boolean; rpe?: number | null; notas?: string | null; avgHr?: number | null;
+    };
+  if (!points?.length) return NextResponse.json({ error: 'No se registró ningún punto GPS' }, { status: 400 });
+
+  const dist = distanciaTotal(points);
   const db = supabaseAdmin();
-  const { data: p } = await db.from('profiles').select('strava_refresh_token').eq('id', user.id).single();
-  let stravaId: number | null = null, uploadStatus = 'sin Strava';
-  if (p?.strava_refresh_token) {
-    try { const up = await uploadGpx(user.id, toGpx(points, name), name); uploadStatus = up.status ?? 'enviado'; stravaId = up.activity_id ?? null; }
-    catch (e) { uploadStatus = 'error al subir'; console.error(e); }
+  let stravaId: number | null = null, uploadStatus = 'no enviado';
+
+  if (subirStrava) {
+    const { data: p } = await db.from('profiles').select('strava_refresh_token').eq('id', user.id).single();
+    if (p?.strava_refresh_token) {
+      try {
+        const up = await uploadGpx(user.id, toGpx(points, name), name);
+        uploadStatus = up.status ?? 'enviado';
+        stravaId = up.activity_id ?? null;
+      } catch { uploadStatus = 'no se pudo subir'; }
+    } else uploadStatus = 'sin Strava conectado';
   }
-  await db.from('activities').insert({
+
+  const { error } = await db.from('activities').insert({
     athlete_id: user.id, workout_id: workoutId ?? null, source: 'app', strava_id: stravaId, name,
-    started_at: new Date(points[0].t).toISOString(), distance_m: Math.round(dist), moving_time_s: Math.round(movingTime),
-    polyline: null, raw: { n: points.length, uploadStatus },
+    started_at: new Date(points[0].t).toISOString(),
+    distance_m: Math.round(dist), moving_time_s: Math.round(movingTime),
+    avg_hr: avgHr ?? null, rpe: rpe ?? null, notes: notas ?? null,
+    raw: { n: points.length, uploadStatus },
   });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
   if (workoutId) await db.from('workouts').update({ completed: true }).eq('id', workoutId).eq('athlete_id', user.id);
   return NextResponse.json({ ok: true, uploadStatus, distance_m: dist });
 }

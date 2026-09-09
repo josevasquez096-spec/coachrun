@@ -9,7 +9,20 @@ type A = { name: string | null; started_at: string; distance_m: number | null; m
 export default function ActivityOverlay({ a }: { a: A }) {
   const input = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string | null>(null);
+  const [archivo, setArchivo] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+
+  async function guardar() {
+    if (!archivo || !url) return;
+    // En iPhone la descarga directa no funciona: usamos el menú de compartir.
+    const nav: any = navigator;
+    if (nav.canShare?.({ files: [archivo] })) {
+      try { await nav.share({ files: [archivo] }); return; } catch { /* si cancela, seguimos */ }
+    }
+    const a = document.createElement('a');
+    a.href = url; a.download = archivo.name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
 
   async function generar(file: File) {
     setBusy(true);
@@ -87,7 +100,9 @@ export default function ActivityOverlay({ a }: { a: A }) {
     const marca = 'CoachRun · By JVasquez';
     ctx.fillText(marca, S - 62 - ctx.measureText(marca).width, S - 40);
 
-    setUrl(canvas.toDataURL('image/jpeg', 0.92));
+    const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), 'image/jpeg', 0.92));
+    setArchivo(new File([blob], `${(a.name ?? 'carrera').replace(/[^a-z0-9]+/gi, '-')}.jpg`, { type: 'image/jpeg' }));
+    setUrl(URL.createObjectURL(blob));
     setBusy(false);
   }
 
@@ -103,10 +118,10 @@ export default function ActivityOverlay({ a }: { a: A }) {
         <>
           <img src={url} alt="" style={{ width: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <a className="btn flare" style={{ flex: 1 }} href={url} download={`${(a.name ?? 'carrera').replace(/[^a-z0-9]+/gi, '-')}.jpg`}>Descargar</a>
+            <button className="btn flare" style={{ flex: 1 }} onClick={guardar}>Guardar o compartir</button>
             <button className="btn ghost" onClick={() => input.current?.click()}>Otra foto</button>
           </div>
-          <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>En el teléfono también puedes mantener pulsada la imagen para guardarla.</p>
+          <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>También puedes mantener pulsada la imagen para guardarla.</p>
         </>
       )}
     </div>
