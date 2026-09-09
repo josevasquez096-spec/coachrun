@@ -7,14 +7,18 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabaseServer().auth.getUser();
   if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
 
-  const { points, name, workoutId, movingTime, subirStrava, rpe, notas, avgHr } =
+  const { points, name, workoutId, movingTime, subirStrava, rpe, notas, avgHr, distanceM } =
     (await req.json()) as {
       points: Point[]; name: string; workoutId?: string; movingTime: number;
       subirStrava?: boolean; rpe?: number | null; notas?: string | null; avgHr?: number | null;
+      distanceM?: number;
     };
   if (!points?.length) return NextResponse.json({ error: 'No se registró ningún punto GPS' }, { status: 400 });
 
-  const dist = distanciaTotal(points);
+  // La distancia buena es la que midió el filtro durante la carrera. Sumar la
+  // traza aquí volvería a acumular el temblor del GPS y marcaría de más; solo
+  // sirve de respaldo si por lo que sea no llega el número.
+  const dist = typeof distanceM === 'number' && distanceM > 0 ? distanceM : distanciaTotal(points);
   const db = supabaseAdmin();
   let stravaId: number | null = null, uploadStatus = 'no enviado';
 

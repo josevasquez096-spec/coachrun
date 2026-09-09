@@ -18,7 +18,7 @@ export default async function RecordPage() {
   return (
     <main className="shell">
       <Refrescar />
-      <h1>Grabar</h1>
+      <h1>Iniciar</h1>
       <Recorder pendientes={pendientes ?? []} hasStrava={!!profile?.strava_athlete_id} perfil={profile as any} />
       <Footer />
       <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />

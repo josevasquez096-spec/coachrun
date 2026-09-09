@@ -11,7 +11,7 @@
  * Además se guarda una copia en el teléfono cada pocos segundos, para que un
  * cierre de la app tampoco borre lo que llevaba corrido.
  */
-import { acumular, distanciaTotal, type Point } from './geo';
+import { cerrar, filtroNuevo, medir, type Filtro, type Point } from './geo';
 import { fmtPaceStr, type Step } from './phases';
 import { fmtTime } from './format';
 import { initAudio, beep, doubleBeep, phaseBeep, speak } from './audio';
@@ -56,10 +56,9 @@ const oyentes = new Set<() => void>();
 let watchId: number | null = null;
 let timerId: any = null;
 let lock: any = null;
-let ultimo: Point | null = null;
-let pendienteM = 0;
+let filtro: Filtro = filtroNuevo();
 let ultimoKm = 0;
-let recientes: Point[] = [];
+let marcas: { t: number; d: number }[] = [];   // distancia acumulada en los últimos 30 s
 let hrSum = { suma: 0, n: 0 };
 let ble: HrHandle | null = null;
 let arranque: number | null = null;          // Date.now() del último "en marcha"
@@ -131,22 +130,22 @@ function tick() {
 function onPos(pos: GeolocationPosition) {
   const c = pos.coords;
   s.gpsAcc = Math.round(c.accuracy);
-  if (c.accuracy > 50) { emitir(); return; }                 // señal demasiado pobre
   const p: Point = { lat: c.latitude, lng: c.longitude, t: pos.timestamp, alt: c.altitude ?? undefined, acc: c.accuracy };
 
-  const { suma, pendiente, aceptar } = acumular(ultimo, p, pendienteM);
-  pendienteM = pendiente;
+  const { avance, punto } = medir(filtro, p);
+  if (!punto) { emitir(); return; }              // punto descartado por el filtro
+  s.pts = [...s.pts, punto];
 
-  if (suma > 0) {
-    s.dist += suma;
+  if (avance > 0) {
+    s.dist += avance;
 
-    // Ritmo de los últimos 30 s
-    recientes.push(p);
-    recientes = recientes.filter((x) => p.t - x.t < 30000);
-    if (recientes.length > 2) {
-      const rd = distanciaTotal(recientes);
-      const rt = (p.t - recientes[0].t) / 1000;
-      s.recentPace = rd > 20 ? rt / (rd / 1000) : 0;
+    // Ritmo de los últimos 30 s, a partir de la distancia ya filtrada.
+    marcas.push({ t: p.t, d: s.dist });
+    marcas = marcas.filter((m) => p.t - m.t < 30000);
+    if (marcas.length > 1) {
+      const dd = s.dist - marcas[0].d;
+      const dt = (p.t - marcas[0].t) / 1000;
+      s.recentPace = dd > 20 ? dt / (dd / 1000) : 0;
     }
 
     // Aviso de kilómetro, con o sin entrenamiento asignado
@@ -162,13 +161,12 @@ function onPos(pos: GeolocationPosition) {
     }
 
     if (s.steps.length && s.idx < s.steps.length) {
-      s.stepDist += suma;
+      s.stepDist += avance;
       const f = s.steps[s.idx];
       if (f.mode === 'distance' && s.stepDist >= (f.meters ?? 0)) avanzar();
     }
   }
 
-  if (aceptar || !ultimo) { ultimo = p; s.pts = [...s.pts, p]; }
   guardarLocal();
   emitir();
 }
@@ -190,7 +188,10 @@ function soltarGps() {
   if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
   if (timerId) { clearInterval(timerId); timerId = null; }
   lock?.release?.(); lock = null;
-  ultimo = null; recientes = []; pendienteM = 0;
+  // El filtro empieza de cero: entre la pausa y la vuelta puede haber movimiento
+  // que no vimos, y no queremos contarlo como una línea recta.
+  filtro = filtroNuevo(); marcas = [];
+  s.recentPace = 0;
 }
 
 // ---------------------------------------------------------------- órdenes
@@ -200,7 +201,7 @@ function soltarGps() {
 export function iniciar(cfg: { workoutId: string | null; titulo: string; steps: Step[]; sonido: boolean; subirStrava: boolean }) {
   if (!('geolocation' in navigator)) { s.msg = 'Este navegador no tiene GPS.'; emitir(); return; }
   s = { ...VACIA, ...cfg, estado: 'running' };
-  ultimo = null; recientes = []; pendienteM = 0; ultimoKm = 0; hrSum = { suma: 0, n: 0 };
+  filtro = filtroNuevo(); marcas = []; ultimoKm = 0; hrSum = { suma: 0, n: 0 };
   acumuladoMs = 0; arranque = Date.now();
   initAudio();
   engancharGps();
@@ -228,6 +229,7 @@ export function pausar() {
   if (s.estado !== 'running') return;
   acumuladoMs += Date.now() - (arranque ?? Date.now());
   arranque = null;
+  s.dist += cerrar(filtro);
   soltarGps();
   s.estado = 'paused'; s.elapsed = segundos();
   if (s.sonido) { beep(440, 0.2); setTimeout(() => speak('En pausa.'), 350); }
@@ -238,6 +240,7 @@ export function pausar() {
 export function terminar() {
   if (s.estado !== 'running' && s.estado !== 'paused') return;
   if (arranque) { acumuladoMs += Date.now() - arranque; arranque = null; }
+  s.dist += cerrar(filtro);
   soltarGps();
   ble?.stop(); ble = null;
   s.estado = 'done'; s.elapsed = segundos();
@@ -289,6 +292,7 @@ export async function guardar(hasStrava: boolean) {
   try {
     const r = await fetch('/api/strava/upload', { method: 'POST', body: JSON.stringify({
       points: s.pts, name: s.titulo, workoutId: s.workoutId ?? undefined, movingTime: s.elapsed,
+      distanceM: Math.round(s.dist),
       subirStrava: hasStrava && s.subirStrava, rpe: s.rpe, notas: s.notas || null, avgHr: media,
     }) });
     const j = await r.json().catch(() => ({}));
