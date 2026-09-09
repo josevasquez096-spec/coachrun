@@ -148,6 +148,19 @@ componentes.
   (`describe()`), y se despliega al tocarlo. Por eso cada `Step` lleva `fase`,
   la posición de la fase de la que salió.
 
+## Copiar y pegar entrenamientos
+El coach copia un entrenamiento desde la ficha de un alumno ("Copiar" en el
+propio entrenamiento) y le aparece un aviso para pegarlo en la ficha de otro,
+eligiendo la fecha. El portapapeles es `lib/portapapeles.ts`: vive en el módulo
+y con copia en `localStorage`, porque copiar y pegar pasan en pantallas
+distintas y si colgara de un componente se perdería al cambiar de alumno.
+
+Se pega por `POST /api/workouts/copiar`, **no** desde el navegador, porque hay
+que comprobar que el alumno de destino sea de este coach: la regla RLS de
+`workouts` solo mira que el entrenamiento lleve tu `coach_id`, no a quién se lo
+asignas. `WorkoutForm` sí inserta desde el cliente (viene de antes) y por eso
+tiene ese mismo agujero: si se toca, conviene pasarlo por la ruta también.
+
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
 coach elige alumno con `?atleta=<id>`. La ruta comprueba que el atleta sea
@@ -218,7 +231,8 @@ por pestaña, así que:
   principal es con contraseña.
 
 ## Ideas pendientes
-- Asignar un entrenamiento a varios alumnos a la vez.
+- Asignar un entrenamiento a varios alumnos **de una vez** (hoy se copia y se
+  pega alumno por alumno, que ya resuelve el caso pero repitiendo el pegado).
 - Comparación automática objetivo vs real con semáforo.
 - La barra inferior tiene 6 pestañas para el coach y queda apretada en pantallas
   pequeñas.

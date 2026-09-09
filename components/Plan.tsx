@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { TYPE_LABEL, todayLocal } from '@/lib/format';
 import { expand, describe, type Phase } from '@/lib/phases';
 import WorkoutForm from './WorkoutForm';
+import * as portapapeles from '@/lib/portapapeles';
 
 type W = {
   id: string; date: string; type: string; title: string; description: string | null;
@@ -20,12 +21,13 @@ function lunesDe(fecha: string) {
 }
 const corto = (f: string) => new Date(f + 'T12:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
 
-export default function Plan({ workouts, editable = false, athleteId }: { workouts: W[]; editable?: boolean; athleteId?: string }) {
+export default function Plan({ workouts, editable = false, athleteId, nombre }: { workouts: W[]; editable?: boolean; athleteId?: string; nombre?: string }) {
   const r = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [helpId, setHelpId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [err, setErr] = useState('');
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const hoy = todayLocal();
 
   async function remove(id: string) {
@@ -46,6 +48,15 @@ export default function Plan({ workouts, editable = false, athleteId }: { workou
       const detalle = `No se pudo borrar: ${e?.message ?? 'error de red'}`;
       setErr(detalle); alert(detalle);
     }
+  }
+  function copiar(w: W) {
+    portapapeles.copiar({
+      type: w.type, title: w.title, description: w.description, target_pace: w.target_pace,
+      target_distance_km: w.target_distance_km, target_duration_min: w.target_duration_min,
+      phases: w.phases, deQuien: nombre ?? 'otro alumno', fecha: w.date,
+    });
+    setCopiadoId(w.id);
+    setTimeout(() => setCopiadoId((x) => (x === w.id ? null : x)), 2500);
   }
   async function toggle(w: W) {
     await fetch(`/api/workouts/${w.id}/hecho`, { method: 'POST', body: JSON.stringify({ completed: !w.completed }) });
@@ -118,6 +129,7 @@ export default function Plan({ workouts, editable = false, athleteId }: { workou
                           <button className="chip" onClick={() => setHelpId(helpId === x.id ? null : x.id)}>¿Cómo lo paso al Garmin?</button>
                         </>
                       )}
+                      {editable && <button className="chip" onClick={() => copiar(x)}>{copiadoId === x.id ? '✓ Copiado' : 'Copiar'}</button>}
                       {editable && <button className="chip" onClick={() => setEditId(editId === x.id ? null : x.id)}>{editId === x.id ? 'Cerrar' : 'Editar'}</button>}
                       {editable && <button className="chip danger" onClick={() => remove(x.id)}>Borrar</button>}
                     </div>

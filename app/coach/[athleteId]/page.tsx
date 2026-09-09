@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/guard';
 import { aligerar } from '@/lib/actividad';
 import WorkoutForm from '@/components/WorkoutForm';
+import PegarEntreno from '@/components/PegarEntreno';
 import Plan from '@/components/Plan';
 import Activities from '@/components/Activities';
 import TabBar from '@/components/TabBar';
@@ -47,10 +48,11 @@ export default async function Athlete({ params, searchParams }: { params: { athl
 
       {ver === 'plan' ? (
         <>
+          <PegarEntreno athleteId={params.athleteId} nombre={(a?.full_name ?? 'este alumno').split(' ')[0]} />
           <h2>Asignar entrenamiento</h2>
           <WorkoutForm athleteId={params.athleteId} />
           <h2>Plan</h2>
-          <Plan workouts={workouts} editable athleteId={params.athleteId} />
+          <Plan workouts={workouts} editable athleteId={params.athleteId} nombre={a?.full_name ?? 'otro alumno'} />
         </>
       ) : (
         <Activities acts={acts} propias={false} />
