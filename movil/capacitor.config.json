@@ -7,6 +7,10 @@
   },
   "server": {
     "androidScheme": "https",
-    "allowNavigation": ["coachrun-delta.vercel.app"]
+    "allowNavigation": [
+      "coachrun-delta.vercel.app",
+      "mycoachruns.com",
+      "www.mycoachruns.com"
+    ]
   }
 }

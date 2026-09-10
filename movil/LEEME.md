@@ -37,6 +37,19 @@ vive en `src/app.js` y se empaqueta con esbuild (`npm run build`) antes de
 `cap sync`. Si alguna vez se vuelve a escribir JavaScript suelto en `www/`, el
 mismo fallo vuelve.
 
+## El complemento de segundo plano se calla si no hay permiso
+
+Segunda cosa que nos mordió: con el permiso de ubicación denegado, `addWatcher`
+**resuelve sin error y luego no llama nunca al callback**. Ni un punto, ni un
+fallo: la pantalla se queda en ceros y parece que la app no hace nada.
+
+Por eso ahora el permiso se mira con `@capacitor/geolocation` (`checkPermissions`
+/ `requestPermissions`) **antes** de arrancar el vigilante, y se enseña el
+resultado. Hay además un botón de "Probar un punto ahora" que pide una sola
+posición: separa "el GPS del teléfono no va" de "el segundo plano no va", que
+son problemas distintos con arreglos distintos. Y un vigilante que avisa si
+pasan 30 s sin recibir nada.
+
 ## El filtro de distancia está duplicado
 
 `www/index.html` lleva una copia en JavaScript de `medir()` de `lib/geo.ts`, porque
