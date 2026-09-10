@@ -8,6 +8,7 @@
  *     window.Capacitor.registerPlugin is not a function
  */
 import { registerPlugin, Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 // ------------------------------------------------------------------ el filtro
 // Copia exacta de medir() en lib/geo.ts. Si allí se cambian el peso o el umbral,
@@ -84,6 +85,54 @@ if (nativo) {
 }
 log('Listo. ' + (nativo ? 'Dentro de la app de Android.' : 'Abierto en un navegador normal.'));
 
+// El permiso se mira al abrir, sin esperar a que se pulse nada: si ya estaba
+// denegado de antes, el complemento de segundo plano se queda callado (ni un
+// punto ni un error) y parece que no hace nada.
+async function mirarPermiso(pedir) {
+  if (!nativo) return null;
+  try {
+    var e = await Geolocation.checkPermissions();
+    if (pedir && e.location !== 'granted') e = await Geolocation.requestPermissions();
+    var ok = e.location === 'granted';
+    marca('d-permiso', ok, 'Concedido', e.location === 'denied' ? 'DENEGADO' : e.location);
+    return e.location;
+  } catch (err) {
+    marca('d-permiso', false, '', 'no se pudo leer');
+    log('No se pudo leer el permiso: ' + (err.message || err));
+    return null;
+  }
+}
+mirarPermiso(false);
+
+// --- prueba de un solo punto: separa "el GPS no va" de "el segundo plano no va"
+document.getElementById('b-punto').onclick = async function () {
+  if (!nativo) { log('Esto solo funciona dentro de la app.'); return; }
+  this.disabled = true;
+  var estado = await mirarPermiso(true);
+  if (estado !== 'granted') {
+    log('Sin permiso de ubicación (' + estado + '). Toca "Abrir los ajustes de la app" y concédelo.');
+    this.disabled = false; return;
+  }
+  log('Pidiendo una posición… (puede tardar hasta 30 s la primera vez)');
+  try {
+    var pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+    marca('d-fix', true, 'Sí, ±' + Math.round(pos.coords.accuracy) + ' m');
+    txt('m-acc', Math.round(pos.coords.accuracy));
+    log('POSICIÓN OK · ±' + Math.round(pos.coords.accuracy) + ' m');
+  } catch (e) {
+    marca('d-fix', false, '', 'falló');
+    // El mensaje del sistema es lo que nos dice si está apagada la ubicación,
+    // si no hay señal, o si el permiso está a medias.
+    log('FALLÓ la posición: ' + (e && (e.message || e.errorMessage) ? (e.message || e.errorMessage) : JSON.stringify(e)));
+  }
+  this.disabled = false;
+};
+
+document.getElementById('b-ajustes').onclick = function () {
+  if (BG && BG.openSettings) BG.openSettings();
+  else log('Abre a mano: Ajustes de Android → Aplicaciones → MyCoachRuns → Permisos.');
+};
+
 document.getElementById('b-empezar').onclick = async function () {
   if (!BG) { log('Sin complemento nativo: esta prueba solo funciona dentro de la app.'); return; }
   dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0;
@@ -100,7 +149,21 @@ document.getElementById('b-empezar').onclick = async function () {
       marca('d-aviso', pa.display === 'granted', 'Concedido', pa.display);
     } catch (e) { marca('d-aviso', false, '', 'no disponible'); }
   }
-  log('Pidiendo permiso de ubicación…');
+  var estado = await mirarPermiso(true);
+  if (estado !== 'granted') {
+    log('Sin permiso de ubicación (' + estado + '): el GPS en segundo plano no va a dar señales de vida. ' +
+        'Toca "Abrir los ajustes de la app" y concédelo.');
+    this.disabled = false; document.getElementById('b-parar').disabled = true;
+    clearInterval(reloj); reloj = null; arranque = null;
+    return;
+  }
+  // Si en medio minuto no ha llegado ni un punto, algo va mal: mejor decirlo
+  // que dejar al usuario mirando ceros durante media hora.
+  var vigia = setTimeout(function () {
+    if (recibidos === 0) log('AVISO: medio minuto sin recibir ni un punto. Si estás dentro de un edificio, ' +
+      'sal a la calle. Si ya estás fuera, esto es el fallo que hay que reportar.');
+  }, 30000);
+  log('Arrancando el GPS en segundo plano…');
   try {
     watcher = await BG.addWatcher({
       backgroundTitle: 'MyCoachRuns está midiendo',
@@ -110,8 +173,8 @@ document.getElementById('b-empezar').onclick = async function () {
       distanceFilter: 0,
     }, function (pos, err) {
       if (err) {
-        marca('d-permiso', false, '', err.code === 'NOT_AUTHORIZED' ? 'Denegado' : err.code);
-        log('ERROR ' + err.code + ' ' + (err.message || ''));
+        marca('d-permiso', false, '', err.code === 'NOT_AUTHORIZED' ? 'DENEGADO' : err.code);
+        log('ERROR del GPS: ' + err.code + ' ' + (err.message || ''));
         return;
       }
       marca('d-permiso', true, 'Concedido');
@@ -127,9 +190,10 @@ document.getElementById('b-empezar').onclick = async function () {
       if (recibidos % 10 === 1) log('punto ' + recibidos + ' · ±' + Math.round(pos.accuracy) + ' m · ' + (dist / 1000).toFixed(2) + ' km');
       pintar();
     });
-    log('Midiendo. Ya puedes bloquear el teléfono.');
+    log('Midiendo (vigilante ' + watcher + '). Ya puedes bloquear el teléfono.');
   } catch (e) {
-    log('No se pudo arrancar: ' + (e.message || e));
+    clearTimeout(vigia);
+    log('No se pudo arrancar: ' + (e && (e.message || e.errorMessage) ? (e.message || e.errorMessage) : JSON.stringify(e)));
     this.disabled = false;
   }
 };

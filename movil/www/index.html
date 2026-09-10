@@ -44,6 +44,7 @@ h1 span { color:var(--verde-txt) }
   <div class="fila"><span>GPS en segundo plano disponible</span><b id="d-plugin">…</b></div>
   <div class="fila"><span>Permiso de ubicación</span><b id="d-permiso">…</b></div>
   <div class="fila"><span>Permiso de notificación</span><b id="d-aviso">…</b></div>
+  <div class="fila"><span>Ubicación del teléfono encendida</span><b id="d-fix">sin probar</b></div>
 </div>
 
 <div class="metrics">
@@ -58,9 +59,11 @@ h1 span { color:var(--verde-txt) }
   <div class="fila"><span>Último punto hace</span><b id="m-hace">—</b></div>
 </div>
 
-<button class="btn go" id="b-empezar">Empezar a medir</button>
+<button class="btn ghost" id="b-punto">1 · Probar un punto ahora</button>
+<button class="btn go" id="b-empezar">2 · Empezar a medir</button>
 <button class="btn stop" id="b-parar" disabled>Parar</button>
 <button class="btn ghost" id="b-copiar">Copiar informe</button>
+<button class="btn ghost" id="b-ajustes">Abrir los ajustes de la app</button>
 <button class="btn ghost" id="b-web">Abrir la app web (probar el puente)</button>
 
 <div class="card">
@@ -69,7 +72,11 @@ h1 span { color:var(--verde-txt) }
 </div>
 
 <p class="nota">
-  <b>Cómo probar:</b> dale a Empezar y acepta los dos permisos que pide (ubicación y avisos). Con
+  <b>Primero:</b> toca <b>«Probar un punto ahora»</b>. Pide la posición una sola vez y dice qué pasa.
+  Si eso falla, lo demás también fallará, y el mensaje de error nos dirá por qué. Ponte junto a una
+  ventana o sal a la calle: dentro de casa el GPS puede no coger señal.
+  <br><br>
+  <b>Después:</b> dale a Empezar y acepta los dos permisos que pide (ubicación y avisos). Con
   <b>«Mientras uso la app»</b> basta: mientras haya una notificación de MyCoachRuns en la barra de arriba,
   Android deja seguir midiendo con la pantalla apagada. Si esa notificación desaparece, la medición se paró.
   <br><br>
