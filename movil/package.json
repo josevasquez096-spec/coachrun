@@ -1,0 +1,18 @@
+{
+  "name": "mycoachruns-movil",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cascara de Android para MyCoachRuns. Aparte del proyecto web a proposito: Vercel compila la raiz y no debe arrastrar estas dependencias.",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.24",
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/local-notifications": "^6.1.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

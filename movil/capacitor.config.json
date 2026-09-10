@@ -1,0 +1,12 @@
+{
+  "appId": "com.mycoachruns.app",
+  "appName": "MyCoachRuns",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["coachrun-delta.vercel.app"]
+  }
+}

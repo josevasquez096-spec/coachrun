@@ -1,0 +1,74 @@
+# Compila el APK de Android en la nube: aquí no hace falta ningún computador
+# con Android Studio. Al terminar deja el archivo colgado en la pestaña
+# "Releases" del repositorio, con enlace público para descargarlo al teléfono.
+name: APK de Android
+
+on:
+  workflow_dispatch:          # se puede lanzar a mano desde la pestaña Actions
+  push:
+    branches: [main]
+    paths:
+      - 'movil/**'
+      - '.github/workflows/apk.yml'
+
+permissions:
+  contents: write             # para publicar el APK en Releases
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: movil/package-lock.json
+
+      # Capacitor 6 y el complemento de Android piden Java 17.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias
+        working-directory: movil
+        run: npm ci
+
+      - name: Pasar la web a la cáscara de Android
+        working-directory: movil
+        run: npx cap sync android
+
+      - name: Compilar el APK
+        working-directory: movil/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Renombrar con la fecha
+        id: apk
+        run: |
+          FECHA=$(date +%Y%m%d-%H%M)
+          mkdir -p salida
+          cp movil/android/app/build/outputs/apk/debug/app-debug.apk "salida/MyCoachRuns-prueba-$FECHA.apk"
+          echo "archivo=salida/MyCoachRuns-prueba-$FECHA.apk" >> "$GITHUB_OUTPUT"
+          echo "fecha=$FECHA" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar para descargar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Una única entrega que se va reemplazando, para que el enlace no cambie.
+          gh release delete apk-prueba --yes --cleanup-tag 2>/dev/null || true
+          gh release create apk-prueba "${{ steps.apk.outputs.archivo }}" \
+            --title "APK de prueba · ${{ steps.apk.outputs.fecha }}" \
+            --prerelease \
+            --notes "Versión de prueba para medir el GPS con la pantalla apagada.
+
+          **Está firmada con una clave de pruebas**, así que para instalar una versión nueva hay que
+          desinstalar la anterior primero. Eso se arregla cuando pasemos a la app de verdad.
+
+          Al instalar, Android avisará de que viene de un origen desconocido: hay que permitirlo una vez."
