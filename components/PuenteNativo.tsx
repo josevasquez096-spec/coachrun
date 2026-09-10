@@ -2,12 +2,14 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Solo se ve dentro de la app de Android, nunca en el navegador.
+ * Distintivo que solo se ve dentro de la app de Android (o si se abre la web
+ * con `?desde=app`).
  *
- * Existe para responder a una pregunta concreta: cuando la cáscara de Android
- * carga esta web desde internet en lugar de llevarla dentro, ¿sigue teniendo
- * acceso al GPS nativo? Hay un fallo conocido por el que no. Este distintivo
- * lo dice a la cara en vez de dejarnos suponerlo.
+ * Responde a una pregunta concreta: cuando la cáscara de Android carga esta web
+ * desde internet en vez de llevarla dentro, ¿le sigue inyectando el puente
+ * nativo? Si no lo hiciera, `window.Capacitor` no existiría aquí, y sin la
+ * marca en la dirección no habría forma de distinguir eso de un navegador
+ * normal: no se vería nada y no aprenderíamos nada.
  */
 export default function PuenteNativo() {
   const [txt, setTxt] = useState<string | null>(null);
@@ -15,15 +17,19 @@ export default function PuenteNativo() {
 
   useEffect(() => {
     const C: any = (window as any).Capacitor;
-    if (!C) return;                                  // navegador normal: no se enseña nada
+    const desdeApp = new URLSearchParams(location.search).get('desde') === 'app';
+    if (!C && !desdeApp) return;                 // navegador normal: no se enseña nada
+
+    if (!C) { setTxt('app · SIN puente nativo'); setBien(false); return; }
     try {
-      const nativo = !!C.isNativePlatform?.();
       const plat = C.getPlatform?.() ?? '?';
-      const gps = !!C.isPluginAvailable?.('BackgroundGeolocation');
-      setBien(nativo && gps);
-      setTxt(`app: ${plat} · GPS nativo: ${gps ? 'sí' : 'NO'}`);
+      const nativo = !!C.isNativePlatform?.();
+      const registrar = typeof C.registerPlugin === 'function';
+      const gps = !!C.Plugins?.BackgroundGeolocation;
+      setBien(nativo && (registrar || gps));
+      setTxt(`${plat} · puente ${nativo ? 'sí' : 'no'} · registerPlugin ${registrar ? 'sí' : 'no'} · GPS ${gps ? 'sí' : 'no'}`);
     } catch (e: any) {
-      setTxt(`app: error (${e?.message ?? 'desconocido'})`);
+      setTxt(`app · error: ${e?.message ?? 'desconocido'}`);
     }
   }, []);
 
@@ -31,7 +37,7 @@ export default function PuenteNativo() {
   return (
     <div style={{
       position: 'fixed', left: 8, bottom: 68, zIndex: 60, padding: '5px 10px', borderRadius: 999,
-      fontSize: 11, fontWeight: 700, color: '#fff', pointerEvents: 'none',
+      fontSize: 10.5, fontWeight: 700, color: '#fff', pointerEvents: 'none', maxWidth: 'calc(100vw - 16px)',
       background: bien ? 'var(--verde-txt)' : 'var(--alerta)',
     }}>{txt}</div>
   );

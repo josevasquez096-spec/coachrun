@@ -23,6 +23,20 @@ De la respuesta a la 2 depende cuánto trabajo queda:
   del APK (un solo código, sigue siendo web dentro de una caja) o hacer app nativa
   aparte (mejor GPS, dos códigos que mantener).
 
+## `registerPlugin` no viene con Android (esto ya nos mordió)
+
+La primera versión llevaba el guion suelto dentro del HTML y la app arrancaba,
+pero al tocar Empezar salía:
+
+    window.Capacitor.registerPlugin is not a function
+
+Android inyecta un `window.Capacitor` mínimo (sirve para saber la plataforma),
+pero **la función para cargar complementos la trae la librería
+`@capacitor/core` y hay que empaquetarla dentro de la página**. Por eso el guion
+vive en `src/app.js` y se empaqueta con esbuild (`npm run build`) antes de
+`cap sync`. Si alguna vez se vuelve a escribir JavaScript suelto en `www/`, el
+mismo fallo vuelve.
+
 ## El filtro de distancia está duplicado
 
 `www/index.html` lleva una copia en JavaScript de `medir()` de `lib/geo.ts`, porque
