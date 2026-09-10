@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MyCoachRuns · prueba de GPS</title>
+<style>
+:root { --lima:#94F420; --verde-txt:#3D680D; --verde-suave:#EDFBD9; --bg:#F2F4F0; --surface:#fff;
+  --ink:#0B0D0B; --ink-2:#5C6560; --line:#DDE2D8; --alerta:#C2410C; }
+* { box-sizing:border-box }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,sans-serif;
+  padding:16px 14px calc(16px + env(safe-area-inset-bottom)); -webkit-font-smoothing:antialiased }
+h1 { font-size:19px; margin:0 0 2px; letter-spacing:-.02em }
+h1 span { color:var(--verde-txt) }
+.sub { color:var(--ink-2); font-size:13px; margin:0 0 14px }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:10px }
+.rot { font-size:11px; font-weight:800; letter-spacing:.05em; color:var(--ink-2); margin-bottom:8px }
+.fila { display:flex; justify-content:space-between; gap:10px; font-size:14px; padding:4px 0 }
+.fila b { font-variant-numeric:tabular-nums }
+.ok { color:var(--verde-txt); font-weight:700 }
+.mal { color:var(--alerta); font-weight:700 }
+.metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px }
+.metric { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 8px; text-align:center }
+.metric b { display:block; font-size:26px; font-weight:800; letter-spacing:-.03em; font-variant-numeric:tabular-nums }
+.metric small { color:var(--ink-2); font-size:11.5px }
+.btn { display:flex; width:100%; justify-content:center; padding:13px; border-radius:999px; border:1.5px solid var(--ink);
+  background:var(--ink); color:#fff; font-weight:700; font-size:15px; margin-bottom:8px; cursor:pointer }
+.btn.go { background:var(--lima); border-color:var(--lima); color:var(--ink) }
+.btn.stop { background:var(--alerta); border-color:var(--alerta) }
+.btn.ghost { background:transparent; color:var(--ink) }
+.btn:disabled { opacity:.45 }
+#log { font-family:ui-monospace,monospace; font-size:11.5px; line-height:1.5; white-space:pre-wrap;
+  max-height:34vh; overflow-y:auto; color:var(--ink-2) }
+.nota { font-size:12.5px; color:var(--ink-2); line-height:1.5 }
+</style>
+</head>
+<body>
+<h1>MyCoach<span>Runs</span> · prueba de GPS</h1>
+<p class="sub">Sirve para saber dos cosas: si la app puede seguir midiendo con la pantalla apagada, y cuánto se parece al reloj.</p>
+
+<div class="card">
+  <div class="rot">DIAGNÓSTICO</div>
+  <div class="fila"><span>Corriendo dentro de la app</span><b id="d-nativo">…</b></div>
+  <div class="fila"><span>GPS en segundo plano disponible</span><b id="d-plugin">…</b></div>
+  <div class="fila"><span>Permiso de ubicación</span><b id="d-permiso">…</b></div>
+  <div class="fila"><span>Permiso de notificación</span><b id="d-aviso">…</b></div>
+</div>
+
+<div class="metrics">
+  <div class="metric"><b id="m-km">0.00</b><small>km filtrados</small></div>
+  <div class="metric"><b id="m-tiempo">0:00</b><small>tiempo</small></div>
+  <div class="metric"><b id="m-acc">—</b><small>± metros</small></div>
+</div>
+
+<div class="card">
+  <div class="fila"><span>Distancia sin filtrar</span><b id="m-crudo">0.00 km</b></div>
+  <div class="fila"><span>Puntos recibidos / usados</span><b id="m-puntos">0 / 0</b></div>
+  <div class="fila"><span>Último punto hace</span><b id="m-hace">—</b></div>
+</div>
+
+<button class="btn go" id="b-empezar">Empezar a medir</button>
+<button class="btn stop" id="b-parar" disabled>Parar</button>
+<button class="btn ghost" id="b-copiar">Copiar informe</button>
+<button class="btn ghost" id="b-web">Abrir la app web (probar el puente)</button>
+
+<div class="card">
+  <div class="rot">REGISTRO</div>
+  <div id="log">Esperando…</div>
+</div>
+
+<p class="nota">
+  <b>Cómo probar:</b> dale a Empezar y acepta los dos permisos que pide (ubicación y avisos). Con
+  <b>«Mientras uso la app»</b> basta: mientras haya una notificación de MyCoachRuns en la barra de arriba,
+  Android deja seguir midiendo con la pantalla apagada. Si esa notificación desaparece, la medición se paró.
+  <br><br>
+  Bloquea el teléfono, guárdalo en el bolsillo y corre tu vuelta de siempre con el reloj puesto. Al volver,
+  desbloquea, dale a Parar y compara «km filtrados» con lo que marcó el reloj.
+  <br><br>
+  Si «Último punto hace» pasa de un minuto mientras corres, el teléfono está matando la app en segundo plano:
+  hay que quitarle la optimización de batería en los ajustes de Android.
+</p>
+
+<script>
+// ------------------------------------------------------------------ el filtro
+// Copia exacta de medir() en lib/geo.ts. Si allí se cambian el peso o el umbral,
+// hay que cambiarlos aquí también, o la prueba deja de medir lo mismo que la app.
+var ACC_MAX = 30, V_MAX = 12;
+function hav(a, b) {
+  var R = 6371000, r = function (d) { return d * Math.PI / 180; };
+  var dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+  var h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.pow(Math.sin(dLng / 2), 2);
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+var f = { suave: null, ancla: null, ultimo: null };
+function medir(p) {
+  var acc = p.acc || 0;
+  if (acc > ACC_MAX) return { avance: 0, usado: false };
+  if (f.ultimo) {
+    var dt = Math.max(0.5, (p.t - f.ultimo.t) / 1000);
+    if (hav(f.ultimo, p) / dt > V_MAX) return { avance: 0, usado: false };
+  }
+  f.ultimo = p;
+  var peso = 1 / (1 + Math.max(acc, 3) / 5);
+  f.suave = !f.suave ? { lat: p.lat, lng: p.lng, t: p.t, acc: acc }
+    : { lat: f.suave.lat + (p.lat - f.suave.lat) * peso, lng: f.suave.lng + (p.lng - f.suave.lng) * peso, t: p.t, acc: acc };
+  if (!f.ancla) { f.ancla = { lat: f.suave.lat, lng: f.suave.lng, t: p.t }; return { avance: 0, usado: true }; }
+  var d = hav(f.ancla, f.suave);
+  if (d < Math.min(15, Math.max(8, acc * 1.5))) return { avance: 0, usado: true };
+  f.ancla = { lat: f.suave.lat, lng: f.suave.lng, t: p.t };
+  return { avance: d, usado: true };
+}
+
+// ------------------------------------------------------------------ estado
+var BG = null, AVISOS = null, watcher = null, arranque = null, reloj = null;
+var dist = 0, crudo = 0, previo = null, recibidos = 0, usados = 0, ultimoT = 0;
+var lineas = [];
+
+function log(t) {
+  var h = new Date().toLocaleTimeString('es');
+  lineas.unshift(h + '  ' + t);
+  if (lineas.length > 200) lineas.pop();
+  document.getElementById('log').textContent = lineas.join('\n');
+}
+function txt(id, v) { document.getElementById(id).textContent = v; }
+function marca(id, bien, si, no) {
+  var e = document.getElementById(id);
+  e.textContent = bien ? (si || 'Sí') : (no || 'No');
+  e.className = bien ? 'ok' : 'mal';
+}
+function mmss(s) {
+  var m = Math.floor(s / 60), x = Math.floor(s % 60);
+  return (m >= 60 ? Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0') : String(m)) + ':' + String(x).padStart(2, '0');
+}
+
+function pintar() {
+  txt('m-km', (dist / 1000).toFixed(2));
+  txt('m-crudo', (crudo / 1000).toFixed(2) + ' km');
+  txt('m-puntos', recibidos + ' / ' + usados);
+  txt('m-tiempo', arranque ? mmss((Date.now() - arranque) / 1000) : '0:00');
+  txt('m-hace', ultimoT ? Math.round((Date.now() - ultimoT) / 1000) + ' s' : '—');
+}
+
+// ------------------------------------------------------------------ arranque
+var nativo = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+marca('d-nativo', nativo, 'Sí (' + (window.Capacitor ? window.Capacitor.getPlatform() : '?') + ')', 'No, es el navegador');
+if (nativo) {
+  try {
+    BG = window.Capacitor.registerPlugin('BackgroundGeolocation');
+    AVISOS = window.Capacitor.registerPlugin('LocalNotifications');
+    marca('d-plugin', true);
+  } catch (e) { marca('d-plugin', false); log('No se pudo cargar el complemento: ' + e.message); }
+} else {
+  marca('d-plugin', false, '', 'Solo dentro de la app');
+  document.getElementById('d-permiso').textContent = '—';
+  document.getElementById('d-aviso').textContent = '—';
+}
+log('Listo. ' + (nativo ? 'Dentro de la app de Android.' : 'Abierto en un navegador normal.'));
+
+document.getElementById('b-empezar').onclick = async function () {
+  if (!BG) { log('Sin complemento nativo: esta prueba solo funciona dentro de la app.'); return; }
+  dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0;
+  f = { suave: null, ancla: null, ultimo: null };
+  arranque = Date.now();
+  this.disabled = true; document.getElementById('b-parar').disabled = false;
+  reloj = setInterval(pintar, 1000);
+  // Desde Android 13 la notificación necesita su propio permiso, y sin
+  // notificación el sistema no deja mantener el servicio en segundo plano.
+  if (AVISOS) {
+    try {
+      var pa = await AVISOS.checkPermissions();
+      if (pa.display !== 'granted') pa = await AVISOS.requestPermissions();
+      marca('d-aviso', pa.display === 'granted', 'Concedido', pa.display);
+    } catch (e) { marca('d-aviso', false, '', 'no disponible'); }
+  }
+  log('Pidiendo permiso de ubicación…');
+  try {
+    watcher = await BG.addWatcher({
+      backgroundTitle: 'MyCoachRuns está midiendo',
+      backgroundMessage: 'Toca para volver a la app.',
+      requestPermissions: true,
+      stale: false,
+      distanceFilter: 0,
+    }, function (pos, err) {
+      if (err) {
+        marca('d-permiso', false, '', err.code === 'NOT_AUTHORIZED' ? 'Denegado' : err.code);
+        log('ERROR ' + err.code + ' ' + (err.message || ''));
+        return;
+      }
+      marca('d-permiso', true, 'Concedido');
+      recibidos++;
+      ultimoT = Date.now();
+      var p = { lat: pos.latitude, lng: pos.longitude, t: pos.time || Date.now(), acc: pos.accuracy };
+      if (previo) crudo += hav(previo, p);
+      previo = p;
+      var r = medir(p);
+      if (r.usado) usados++;
+      if (r.avance > 0) dist += r.avance;
+      txt('m-acc', Math.round(pos.accuracy));
+      if (recibidos % 10 === 1) log('punto ' + recibidos + ' · ±' + Math.round(pos.accuracy) + ' m · ' + (dist / 1000).toFixed(2) + ' km');
+      pintar();
+    });
+    log('Midiendo. Ya puedes bloquear el teléfono.');
+  } catch (e) {
+    log('No se pudo arrancar: ' + (e.message || e));
+    this.disabled = false;
+  }
+};
+
+document.getElementById('b-parar').onclick = async function () {
+  if (watcher && BG) { try { await BG.removeWatcher({ id: watcher }); } catch (e) {} }
+  watcher = null; clearInterval(reloj); reloj = null;
+  this.disabled = true; document.getElementById('b-empezar').disabled = false;
+  log('PARADO. Filtrado ' + (dist / 1000).toFixed(3) + ' km · sin filtrar ' + (crudo / 1000).toFixed(3) + ' km · ' +
+      recibidos + ' puntos en ' + mmss((Date.now() - arranque) / 1000));
+  pintar();
+};
+
+document.getElementById('b-copiar').onclick = function () {
+  var t = 'MyCoachRuns prueba de GPS\n' +
+    'nativo: ' + nativo + ' · complemento: ' + !!BG + '\n' +
+    'filtrado: ' + (dist / 1000).toFixed(3) + ' km · sin filtrar: ' + (crudo / 1000).toFixed(3) + ' km\n' +
+    'puntos: ' + recibidos + ' recibidos, ' + usados + ' usados\n' +
+    'tiempo: ' + (arranque ? mmss((Date.now() - arranque) / 1000) : '—') + '\n\n' + lineas.join('\n');
+  if (navigator.share) navigator.share({ text: t }).catch(function () {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { log('Informe copiado.'); });
+};
+
+document.getElementById('b-web').onclick = function () {
+  location.href = 'https://coachrun-delta.vercel.app/';
+};
+</script>
+</body>
+</html>
