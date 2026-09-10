@@ -161,6 +161,12 @@ que comprobar que el alumno de destino sea de este coach: la regla RLS de
 asignas. `WorkoutForm` sí inserta desde el cliente (viene de antes) y por eso
 tiene ese mismo agujero: si se toca, conviene pasarlo por la ruta también.
 
+## Android
+La cáscara de Android está en `movil/` (Capacitor), aparte para que Vercel no
+arrastre sus dependencias. Hoy es una **app de prueba** para medir el GPS en
+segundo plano y decidir el camino. Todo el detalle, los porqués y las trampas
+en `movil/LEEME.md`. El APK lo compila GitHub Actions y queda en Releases.
+
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
 coach elige alumno con `?atleta=<id>`. La ruta comprueba que el atleta sea

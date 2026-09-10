@@ -38,6 +38,12 @@ jobs:
         working-directory: movil
         run: npm ci
 
+      # Empaqueta src/app.js dentro de www/. Hace falta: `registerPlugin` no
+      # viene con Android, la trae @capacitor/core y hay que meterla dentro.
+      - name: Empaquetar la pantalla de prueba
+        working-directory: movil
+        run: npm run build
+
       - name: Pasar la web a la cáscara de Android
         working-directory: movil
         run: npx cap sync android
