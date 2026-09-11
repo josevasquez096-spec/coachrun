@@ -32,16 +32,18 @@ function medir(p) {
   var peso = 1 / (1 + Math.max(acc, 3) / 5);
   f.suave = !f.suave ? { lat: p.lat, lng: p.lng, t: p.t, acc: acc }
     : { lat: f.suave.lat + (p.lat - f.suave.lat) * peso, lng: f.suave.lng + (p.lng - f.suave.lng) * peso, t: p.t, acc: acc };
-  if (!f.ancla) { f.ancla = { lat: f.suave.lat, lng: f.suave.lng, t: p.t }; return { avance: 0, usado: true }; }
+  if (!f.ancla) { f.ancla = { lat: f.suave.lat, lng: f.suave.lng, t: p.t }; return { avance: 0, usado: true, pend: 0, umbral: 0 }; }
   var d = hav(f.ancla, f.suave);
-  if (d < Math.min(15, Math.max(8, acc * 1.5))) return { avance: 0, usado: true };
+  var umbral = Math.min(15, Math.max(8, acc * 1.5));
+  if (d < umbral) return { avance: 0, usado: true, pend: d, umbral: umbral };
   f.ancla = { lat: f.suave.lat, lng: f.suave.lng, t: p.t };
-  return { avance: d, usado: true };
+  return { avance: d, usado: true, pend: 0, umbral: umbral };
 }
 
 // ------------------------------------------------------------------ estado
 var BG = null, AVISOS = null, watcher = null, arranque = null, reloj = null;
 var dist = 0, crudo = 0, previo = null, recibidos = 0, usados = 0, ultimoT = 0;
+var inicioPunto = null, pendiente = 0, umbralAhora = 8;
 var lineas = [];
 
 function log(t) {
@@ -67,6 +69,8 @@ function pintar() {
   txt('m-puntos', recibidos + ' / ' + usados);
   txt('m-tiempo', arranque ? mmss((Date.now() - arranque) / 1000) : '0:00');
   txt('m-hace', ultimoT ? Math.round((Date.now() - ultimoT) / 1000) + ' s' : '—');
+  txt('m-recta', inicioPunto && f.suave ? Math.round(hav(inicioPunto, f.suave)) + ' m' : '0 m');
+  txt('m-pend', pendiente.toFixed(1) + ' / ' + Math.round(umbralAhora) + ' m');
 }
 
 // ------------------------------------------------------------------ arranque
@@ -136,6 +140,7 @@ document.getElementById('b-ajustes').onclick = function () {
 document.getElementById('b-empezar').onclick = async function () {
   if (!BG) { log('Sin complemento nativo: esta prueba solo funciona dentro de la app.'); return; }
   dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0;
+  inicioPunto = null; pendiente = 0; umbralAhora = 8;
   f = { suave: null, ancla: null, ultimo: null };
   arranque = Date.now();
   this.disabled = true; document.getElementById('b-parar').disabled = false;
@@ -186,6 +191,11 @@ document.getElementById('b-empezar').onclick = async function () {
       var r = medir(p);
       if (r.usado) usados++;
       if (r.avance > 0) dist += r.avance;
+      pendiente = r.pend || 0;
+      if (r.umbral) umbralAhora = r.umbral;
+      // La línea recta desde el primer punto no depende del filtro: si caminas
+      // 100 m derecho, esto tiene que marcar ~100 m. Es la vara de medir.
+      if (!inicioPunto) inicioPunto = { lat: p.lat, lng: p.lng };
       txt('m-acc', Math.round(pos.accuracy));
       if (recibidos % 10 === 1) log('punto ' + recibidos + ' · ±' + Math.round(pos.accuracy) + ' m · ' + (dist / 1000).toFixed(2) + ' km');
       pintar();
@@ -203,6 +213,7 @@ document.getElementById('b-parar').onclick = async function () {
   watcher = null; clearInterval(reloj); reloj = null;
   this.disabled = true; document.getElementById('b-empezar').disabled = false;
   log('PARADO. Filtrado ' + (dist / 1000).toFixed(3) + ' km · sin filtrar ' + (crudo / 1000).toFixed(3) + ' km · ' +
+      'en línea recta ' + (inicioPunto && f.suave ? Math.round(hav(inicioPunto, f.suave)) : 0) + ' m · ' +
       recibidos + ' puntos en ' + mmss((Date.now() - arranque) / 1000));
   pintar();
 };
@@ -211,6 +222,7 @@ document.getElementById('b-copiar').onclick = function () {
   var t = 'MyCoachRuns prueba de GPS\n' +
     'nativo: ' + nativo + ' · complemento: ' + !!BG + '\n' +
     'filtrado: ' + (dist / 1000).toFixed(3) + ' km · sin filtrar: ' + (crudo / 1000).toFixed(3) + ' km\n' +
+    'en línea recta desde el inicio: ' + (inicioPunto && f.suave ? Math.round(hav(inicioPunto, f.suave)) : 0) + ' m\n' +
     'puntos: ' + recibidos + ' recibidos, ' + usados + ' usados\n' +
     'tiempo: ' + (arranque ? mmss((Date.now() - arranque) / 1000) : '—') + '\n\n' + lineas.join('\n');
   if (navigator.share) navigator.share({ text: t }).catch(function () {});
