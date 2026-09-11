@@ -43,7 +43,8 @@ function medir(p) {
 // ------------------------------------------------------------------ estado
 var BG = null, AVISOS = null, watcher = null, arranque = null, reloj = null;
 var dist = 0, crudo = 0, previo = null, recibidos = 0, usados = 0, ultimoT = 0;
-var inicioPunto = null, pendiente = 0, umbralAhora = 8;
+var inicioPunto = null, pendiente = 0, umbralAhora = 8, avisado = false;
+var OBJETIVO = 100;   // metros en línea recta que hacen la prueba concluyente
 var lineas = [];
 
 function log(t) {
@@ -69,7 +70,20 @@ function pintar() {
   txt('m-puntos', recibidos + ' / ' + usados);
   txt('m-tiempo', arranque ? mmss((Date.now() - arranque) / 1000) : '0:00');
   txt('m-hace', ultimoT ? Math.round((Date.now() - ultimoT) / 1000) + ' s' : '—');
-  txt('m-recta', inicioPunto && f.suave ? Math.round(hav(inicioPunto, f.suave)) + ' m' : '0 m');
+  var recta = inicioPunto && f.suave ? hav(inicioPunto, f.suave) : 0;
+  txt('m-recta', Math.round(recta) + ' / ' + OBJETIVO + ' m');
+  var barra = document.getElementById('m-barra');
+  barra.style.width = Math.min(100, (recta / OBJETIVO) * 100) + '%';
+  if (recta >= OBJETIVO) {
+    barra.parentNode.className = 'barra hecho';
+    if (!avisado) {
+      avisado = true;
+      // Se compara aquí mismo: el número de la izquierda no pasa por el filtro.
+      log('¡OBJETIVO! ' + Math.round(recta) + ' m en línea recta · el filtro lleva ' +
+          (dist / 1000).toFixed(3) + ' km. Ya puedes PARAR. (Si has ido derecho, deberían parecerse; ' +
+          'si has dado vueltas, el filtro marcará más, que es lo correcto.)');
+    }
+  }
   txt('m-pend', pendiente.toFixed(1) + ' / ' + Math.round(umbralAhora) + ' m');
 }
 
@@ -140,7 +154,8 @@ document.getElementById('b-ajustes').onclick = function () {
 document.getElementById('b-empezar').onclick = async function () {
   if (!BG) { log('Sin complemento nativo: esta prueba solo funciona dentro de la app.'); return; }
   dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0;
-  inicioPunto = null; pendiente = 0; umbralAhora = 8;
+  inicioPunto = null; pendiente = 0; umbralAhora = 8; avisado = false;
+  document.getElementById('m-barra').parentNode.className = 'barra';
   f = { suave: null, ancla: null, ultimo: null };
   arranque = Date.now();
   this.disabled = true; document.getElementById('b-parar').disabled = false;
