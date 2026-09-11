@@ -44,6 +44,7 @@ function medir(p) {
 var BG = null, AVISOS = null, watcher = null, arranque = null, reloj = null;
 var dist = 0, crudo = 0, previo = null, recibidos = 0, usados = 0, ultimoT = 0;
 var inicioPunto = null, pendiente = 0, umbralAhora = 8, avisado = false;
+var mayorHueco = 0;   // el silencio más largo del GPS, que delata si Android mató la app
 var OBJETIVO = 100;   // metros en línea recta que hacen la prueba concluyente
 var lineas = [];
 
@@ -70,6 +71,9 @@ function pintar() {
   txt('m-puntos', recibidos + ' / ' + usados);
   txt('m-tiempo', arranque ? mmss((Date.now() - arranque) / 1000) : '0:00');
   txt('m-hace', ultimoT ? Math.round((Date.now() - ultimoT) / 1000) + ' s' : '—');
+  var mh = document.getElementById('m-hueco');
+  mh.textContent = mayorHueco ? Math.round(mayorHueco) + ' s' : '—';
+  mh.className = mayorHueco > 30 ? 'mal' : mayorHueco ? 'ok' : '';
   var recta = inicioPunto && f.suave ? hav(inicioPunto, f.suave) : 0;
   txt('m-recta', Math.round(recta) + ' / ' + OBJETIVO + ' m');
   var barra = document.getElementById('m-barra');
@@ -154,7 +158,7 @@ document.getElementById('b-ajustes').onclick = function () {
 document.getElementById('b-empezar').onclick = async function () {
   if (!BG) { log('Sin complemento nativo: esta prueba solo funciona dentro de la app.'); return; }
   dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0;
-  inicioPunto = null; pendiente = 0; umbralAhora = 8; avisado = false;
+  inicioPunto = null; pendiente = 0; umbralAhora = 8; avisado = false; mayorHueco = 0;
   document.getElementById('m-barra').parentNode.className = 'barra';
   f = { suave: null, ancla: null, ultimo: null };
   arranque = Date.now();
@@ -199,7 +203,17 @@ document.getElementById('b-empezar').onclick = async function () {
       }
       marca('d-permiso', true, 'Concedido');
       recibidos++;
-      ultimoT = Date.now();
+      // El hueco entre puntos es lo que delata que el teléfono durmió la app
+      // mientras estaba bloqueada. Se guarda el peor, para no tener que mirar.
+      var ahora = Date.now();
+      if (ultimoT) {
+        var hueco = (ahora - ultimoT) / 1000;
+        if (hueco > mayorHueco) {
+          mayorHueco = hueco;
+          if (hueco > 30) log('SILENCIO de ' + Math.round(hueco) + ' s: el teléfono durmió la app.');
+        }
+      }
+      ultimoT = ahora;
       var p = { lat: pos.latitude, lng: pos.longitude, t: pos.time || Date.now(), acc: pos.accuracy };
       if (previo) crudo += hav(previo, p);
       previo = p;
@@ -229,7 +243,8 @@ document.getElementById('b-parar').onclick = async function () {
   this.disabled = true; document.getElementById('b-empezar').disabled = false;
   log('PARADO. Filtrado ' + (dist / 1000).toFixed(3) + ' km · sin filtrar ' + (crudo / 1000).toFixed(3) + ' km · ' +
       'en línea recta ' + (inicioPunto && f.suave ? Math.round(hav(inicioPunto, f.suave)) : 0) + ' m · ' +
-      recibidos + ' puntos en ' + mmss((Date.now() - arranque) / 1000));
+      recibidos + ' puntos en ' + mmss((Date.now() - arranque) / 1000) +
+      ' · mayor silencio ' + Math.round(mayorHueco) + ' s');
   pintar();
 };
 

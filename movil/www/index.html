@@ -60,6 +60,7 @@ h1 span { color:var(--verde-txt) }
   <div class="fila"><span>Distancia sin filtrar</span><b id="m-crudo">0.00 km</b></div>
   <div class="fila"><span>Puntos recibidos / usados</span><b id="m-puntos">0 / 0</b></div>
   <div class="fila"><span>Último punto hace</span><b id="m-hace">—</b></div>
+  <div class="fila"><span>Mayor silencio del GPS</span><b id="m-hueco">—</b></div>
   <div class="fila"><span>En línea recta desde el inicio</span><b id="m-recta">0 / 100 m</b></div>
   <div class="barra"><div id="m-barra"></div></div>
   <div class="fila"><span>Avance sin confirmar</span><b id="m-pend">0 / 8 m</b></div>
@@ -97,8 +98,14 @@ h1 span { color:var(--verde-txt) }
   Bloquea el teléfono, guárdalo en el bolsillo y corre tu vuelta de siempre con el reloj puesto. Al volver,
   desbloquea, dale a Parar y compara «km filtrados» con lo que marcó el reloj.
   <br><br>
-  Si «Último punto hace» pasa de un minuto mientras corres, el teléfono está matando la app en segundo plano:
-  hay que quitarle la optimización de batería en los ajustes de Android.
+  <b>La prueba de la pantalla apagada.</b> Es la importante. Arranca, bloquea el teléfono, guárdalo en el
+  bolsillo y camina o trota 10 minutos. Al volver mira <b>«Mayor silencio del GPS»</b>: es el hueco más
+  largo que hubo entre dos puntos en toda la sesión.
+  <br><br>
+  Si son <b>pocos segundos</b>, el segundo plano aguanta y la app sirve para grabar de verdad.
+  Si son <b>minutos</b>, tu teléfono mató la app mientras estaba bloqueada, y hay que quitarle la
+  optimización de batería en los ajustes de Android. No hace falta que mires la pantalla mientras
+  caminas: el número se guarda solo.
 </p>
 
 <script src="app.js"></script>
