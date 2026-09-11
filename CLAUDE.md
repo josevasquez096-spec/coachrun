@@ -194,6 +194,20 @@ arrastre sus dependencias. Hoy es una **app de prueba** para medir el GPS en
 segundo plano y decidir el camino. Todo el detalle, los porqués y las trampas
 en `movil/LEEME.md`. El APK lo compila GitHub Actions y queda en Releases.
 
+Medido en un Samsung real (no simulado), con la app en primer plano:
+
+- El GPS nativo llega a la app: ~1 punto por segundo, precisión de ±2 a ±4 m.
+- **Quieto 3 min:** lectura cruda 134 m, filtrada **0 m**. El filtro de
+  `lib/geo.ts` se come el temblor entero. Esta es la confirmación en hardware
+  real del fallo de "marcar de más".
+- **Caminando 2,5 min:** cruda 201 m, filtrada **156 m** (22 % de ruido
+  descartado), subiendo a un ritmo constante de ~1,05 m/s, que es el paso real.
+  De 137 puntos descartó 2 por malos.
+
+Falta la prueba que decide si la app nativa merece la pena: **con la pantalla
+bloqueada**. La pantalla guarda el "mayor silencio del GPS" de la sesión, que es
+lo que delata si Android durmió la app.
+
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
 coach elige alumno con `?atleta=<id>`. La ruta comprueba que el atleta sea
