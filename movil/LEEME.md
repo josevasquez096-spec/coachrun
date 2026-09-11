@@ -50,6 +50,20 @@ posición: separa "el GPS del teléfono no va" de "el segundo plano no va", que
 son problemas distintos con arreglos distintos. Y un vigilante que avisa si
 pasan 30 s sin recibir nada.
 
+## Las distancias cortas marcan cero, y está bien
+
+Tercera confusión: caminar 10 m por el patio marca 0,00 km. No es un fallo. El
+filtro no suma nada hasta que el recorrido se aleja del ancla más que el ruido
+del GPS (entre 8 y 15 m según la precisión). Es justo lo que impide que estar
+parado sume kilómetros.
+
+Por eso la pantalla enseña ahora **«Avance sin confirmar» (x / umbral)** y
+**«En línea recta desde el inicio»**. Esta segunda no pasa por el filtro: si
+caminas 100 m derecho, tiene que marcar ~100 m. Es la vara de medir contra la
+que comparar los km filtrados.
+
+Una prueba en un patio no vale. Hacen falta **100 m o más en línea recta**.
+
 ## El filtro de distancia está duplicado
 
 `www/index.html` lleva una copia en JavaScript de `medir()` de `lib/geo.ts`, porque

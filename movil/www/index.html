@@ -57,6 +57,8 @@ h1 span { color:var(--verde-txt) }
   <div class="fila"><span>Distancia sin filtrar</span><b id="m-crudo">0.00 km</b></div>
   <div class="fila"><span>Puntos recibidos / usados</span><b id="m-puntos">0 / 0</b></div>
   <div class="fila"><span>Último punto hace</span><b id="m-hace">—</b></div>
+  <div class="fila"><span>En línea recta desde el inicio</span><b id="m-recta">0 m</b></div>
+  <div class="fila"><span>Avance sin confirmar</span><b id="m-pend">0 / 8 m</b></div>
 </div>
 
 <button class="btn ghost" id="b-punto">1 · Probar un punto ahora</button>
@@ -72,6 +74,12 @@ h1 span { color:var(--verde-txt) }
 </div>
 
 <p class="nota">
+  <b>Ojo con las distancias cortas:</b> el filtro no suma nada hasta que te alejas más de lo que mide el
+  temblor del GPS (los metros que salen en «Avance sin confirmar»). Es a propósito: así estar parado no
+  suma kilómetros. Pero significa que <b>caminar 10 metros por el patio va a marcar 0,00 y es correcto</b>.
+  Para que la prueba diga algo, camina <b>al menos 100 metros en línea recta</b>, sin volver sobre tus pasos.
+  Compara entonces «km filtrados» con «En línea recta desde el inicio»: deberían parecerse mucho.
+  <br><br>
   <b>Primero:</b> toca <b>«Probar un punto ahora»</b>. Pide la posición una sola vez y dice qué pasa.
   Si eso falla, lo demás también fallará, y el mensaje de error nos dirá por qué. Ponte junto a una
   ventana o sal a la calle: dentro de casa el GPS puede no coger señal.
