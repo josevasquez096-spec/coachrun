@@ -29,6 +29,9 @@ h1 span { color:var(--verde-txt) }
 .btn.stop { background:var(--alerta); border-color:var(--alerta) }
 .btn.ghost { background:transparent; color:var(--ink) }
 .btn:disabled { opacity:.45 }
+.barra { height:8px; background:var(--bg); border-radius:999px; overflow:hidden; margin:2px 0 6px }
+.barra div { height:100%; width:0; background:var(--lima); transition:width .3s }
+.barra.hecho div { background:var(--verde-txt) }
 #log { font-family:ui-monospace,monospace; font-size:11.5px; line-height:1.5; white-space:pre-wrap;
   max-height:34vh; overflow-y:auto; color:var(--ink-2) }
 .nota { font-size:12.5px; color:var(--ink-2); line-height:1.5 }
@@ -57,7 +60,8 @@ h1 span { color:var(--verde-txt) }
   <div class="fila"><span>Distancia sin filtrar</span><b id="m-crudo">0.00 km</b></div>
   <div class="fila"><span>Puntos recibidos / usados</span><b id="m-puntos">0 / 0</b></div>
   <div class="fila"><span>Último punto hace</span><b id="m-hace">—</b></div>
-  <div class="fila"><span>En línea recta desde el inicio</span><b id="m-recta">0 m</b></div>
+  <div class="fila"><span>En línea recta desde el inicio</span><b id="m-recta">0 / 100 m</b></div>
+  <div class="barra"><div id="m-barra"></div></div>
   <div class="fila"><span>Avance sin confirmar</span><b id="m-pend">0 / 8 m</b></div>
 </div>
 
@@ -77,8 +81,10 @@ h1 span { color:var(--verde-txt) }
   <b>Ojo con las distancias cortas:</b> el filtro no suma nada hasta que te alejas más de lo que mide el
   temblor del GPS (los metros que salen en «Avance sin confirmar»). Es a propósito: así estar parado no
   suma kilómetros. Pero significa que <b>caminar 10 metros por el patio va a marcar 0,00 y es correcto</b>.
-  Para que la prueba diga algo, camina <b>al menos 100 metros en línea recta</b>, sin volver sobre tus pasos.
-  Compara entonces «km filtrados» con «En línea recta desde el inicio»: deberían parecerse mucho.
+  Para que la prueba diga algo hay que <b>alejarse de verdad</b>. Camina en <b>una sola dirección</b>, sin
+  volver sobre tus pasos, hasta que la barra de «En línea recta desde el inicio» se llene: son 100 metros.
+  La app te avisará en el registro cuando llegues, y ahí sí paras. Entonces «km filtrados» y «en línea
+  recta» tienen que parecerse.
   <br><br>
   <b>Primero:</b> toca <b>«Probar un punto ahora»</b>. Pide la posición una sola vez y dice qué pasa.
   Si eso falla, lo demás también fallará, y el mensaje de error nos dirá por qué. Ponte junto a una
