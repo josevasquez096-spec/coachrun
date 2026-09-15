@@ -97,8 +97,12 @@ causaban "código no encontrado".
 - OAuth en `app/api/strava/`. El webhook (`/api/strava/webhook`) importa cada
   carrera nueva y la asocia al entrenamiento del mismo día.
 - Suscripción del webhook: id 371658.
-- La app está en modo desarrollador: **límite de atletas conectados**. Solicitud
-  de ampliación pendiente en strava.com/settings/api.
+- **Aprobada por Strava (sept. 2026).** Capacidad: **999 atletas**. Límites:
+  600 peticiones cada 15 min y 6.000 al día en total; de ellas 300 cada 15 min
+  y 3.000 al día de lectura. Importar una carrera cuesta ~2 peticiones (leer la
+  actividad, y renovar el permiso si toca), así que con una decena de atletas se
+  gastan unas decenas al día: hay sitio de sobra. El techo se acercaría por
+  encima del centenar de atletas activos a diario.
 - La app también sube GPX a Strava (`activity:write`). Desde la v3 es **opcional**:
   una casilla al terminar la carrera decide si se sube o se guarda solo aquí.
 
@@ -161,32 +165,37 @@ que comprobar que el alumno de destino sea de este coach: la regla RLS de
 asignas. `WorkoutForm` sí inserta desde el cliente (viene de antes) y por eso
 tiene ese mismo agujero: si se toca, conviene pasarlo por la ruta también.
 
-## Dominio propio: EN ESPERA (no tocar)
-Hay comprado `mycoachruns.com`, pero **el proyecto web sigue en
-`coachrun-delta.vercel.app` a propósito**. Está pendiente una solicitud a Strava
-para subir el límite de atletas conectados, y esa solicitud se apoya en tener
-10 atletas conectados de verdad. Hasta que Strava responda, **no se cambia nada**
-del dominio: ni en Vercel, ni en Supabase, ni en strava.com/settings/api.
+## Dominio propio: mycoachruns.com (libre para mudarse)
+Comprado `mycoachruns.com`. Estuvo en espera mientras Strava revisaba la
+ampliación de atletas; **ya está aprobada, así que el freno desapareció**. El
+proyecto sigue en `coachrun-delta.vercel.app` hasta que se haga la mudanza.
 
-Qué afecta cada cosa, por si en algún momento hay que decidir con prisa:
+Orden de la mudanza, y qué afecta cada pieza:
 
-- Los permisos de Strava viven en `profiles` (`strava_refresh_token` y compañía),
-  en Supabase. **Añadir un dominio en Vercel no los toca.** Tampoco cambiar
-  `NEXT_PUBLIC_APP_URL`, que solo se usa para el `redirect_uri` de una conexión
-  **nueva** (`lib/strava.ts`).
-- El webhook (suscripción 371658) tiene su propia `callback_url` guardada en
-  Strava, independiente del *Authorization Callback Domain*. Mientras el dominio
-  de Vercel siga vivo, sigue importando carreras.
-- Cambiar el *Authorization Callback Domain* en Strava no debería revocar los
-  permisos ya concedidos, pero es el único punto con algo de duda, y es un solo
-  valor: en cuanto se cambia, conectar Strava deja de funcionar desde el dominio
-  viejo. Ese es el que hay que tocar **último y con la revisión ya resuelta**.
-- La sesión de la app se guarda por dominio: al mudarse, **todos tendrán que
-  volver a entrar** y reinstalar la app de la pantalla de inicio.
+1. Vercel → Settings → Domains → añadir el dominio, poner los DNS que indique
+   Vercel, esperar el verde y marcarlo como principal.
+2. `NEXT_PUBLIC_APP_URL` a `https://mycoachruns.com` y volver a desplegar. Solo
+   se usa para el `redirect_uri` de una conexión **nueva** de Strava
+   (`lib/strava.ts`): no toca los permisos ya concedidos.
+3. Supabase → Authentication → URL Configuration: añadir
+   `https://mycoachruns.com/auth/callback`, **dejando también la vieja** durante
+   la transición.
+4. **Lo último:** Strava → strava.com/settings/api → *Authorization Callback
+   Domain*. Es un solo valor: al cambiarlo, conectar Strava deja de funcionar
+   desde el dominio viejo.
 
-En la cáscara de Android ya está `mycoachruns.com` en `allowNavigation`. Es
-inerte: solo permite navegar allí el día que exista, no cambia a dónde apunta
-nada.
+Lo que **no** se rompe: los permisos de Strava viven en `profiles`
+(`strava_refresh_token` y compañía) en Supabase, y ningún paso de arriba los
+toca. El webhook (suscripción 371658) tiene su propia `callback_url` guardada en
+Strava, independiente del callback domain, así que sigue importando carreras
+mientras el dominio de Vercel siga vivo. Moverlo es borrar y recrear la
+suscripción, y no corre prisa.
+
+Lo que sí molesta: la sesión se guarda por dominio, así que **todos tendrán que
+volver a entrar** y reinstalar la app de la pantalla de inicio. Conviene avisar
+al grupo con un solo mensaje cuando el dominio ya esté en verde.
+
+`mycoachruns.com` ya está en `allowNavigation` de la cáscara de Android.
 
 ## Android
 La cáscara de Android está en `movil/` (Capacitor), aparte para que Vercel no
