@@ -63,6 +63,22 @@ function conTiempo(promesa, ms, queEs) {
   })]);
 }
 
+/** Android dice "Location services disabled" cuando el interruptor general de
+ *  Ubicación está apagado. NO es un permiso de la app, y confundirlo con uno
+ *  hizo perder varias salidas: el cartel decía DENEGADO con el permiso puesto. */
+function ubicacionApagada(msg) {
+  var m = String(msg || '').toLowerCase();
+  return m.indexOf('location services') >= 0 || m.indexOf('not enabled') >= 0;
+}
+function avisarApagada() {
+  var a = document.getElementById('apagada');
+  if (a) a.hidden = false;
+  marca('d-fix', false, '', 'APAGADA');
+  log('LA UBICACIÓN DEL TELÉFONO ESTÁ APAGADA. No es un permiso de la app: es el interruptor ' +
+      'de Ubicación de Android, el que afecta a todas las apps. Baja la barra de notificaciones ' +
+      'y enciéndelo, o entra en Ajustes → Ubicación.');
+}
+
 function log(t) {
   var h = new Date().toLocaleTimeString('es');
   lineas.unshift(h + '  ' + t);
@@ -154,6 +170,7 @@ async function mirarPermiso(pedir) {
       'de la app, en Ubicación, activa "Usar ubicación precisa".');
     return fino ? 'granted' : (burdo ? 'coarse' : e.location);
   } catch (err) {
+    if (ubicacionApagada(err.message)) { avisarApagada(); return 'apagada'; }
     marca('d-permiso', false, '', 'no contestó');
     log('No se pudo leer el permiso: ' + (err.message || err) + ' (seguimos igual)');
     return null;
@@ -173,6 +190,7 @@ document.getElementById('b-punto').onclick = async function () {
     txt('m-acc', Math.round(pos.coords.accuracy));
     log('POSICIÓN OK · ±' + Math.round(pos.coords.accuracy) + ' m');
   } catch (e) {
+    if (ubicacionApagada(e && (e.message || e.errorMessage))) { avisarApagada(); this.disabled = false; return; }
     marca('d-fix', false, '', 'falló');
     // El mensaje del sistema es lo que nos dice si está apagada la ubicación,
     // si no hay señal, o si el permiso está a medias.
@@ -210,6 +228,8 @@ document.getElementById('b-empezar').onclick = async function () {
   inicioPunto = null; pendiente = 0; umbralAhora = 8; avisado = false; mayorHueco = 0;
   var b = document.getElementById('m-barra');
   if (b) b.parentNode.className = 'barra';
+  var av = document.getElementById('apagada');
+  if (av) av.hidden = true;
   f = { suave: null, ancla: null, ultimo: null };
   arranque = Date.now();
   this.disabled = true; document.getElementById('b-parar').disabled = false;
@@ -241,8 +261,14 @@ document.getElementById('b-empezar').onclick = async function () {
       distanceFilter: 0,
     }, function (pos, err) {
       if (err) {
-        marca('d-permiso', false, '', err.code === 'NOT_AUTHORIZED' ? 'DENEGADO' : err.code);
-        log('ERROR del GPS: ' + err.code + ' ' + (err.message || ''));
+        // "NOT_AUTHORIZED" lo usa el complemento para dos cosas muy distintas:
+        // permiso denegado, y ubicación del teléfono apagada. Hay que separarlas.
+        if (ubicacionApagada(err.message)) avisarApagada();
+        else {
+          marca('d-permiso', false, '', err.code === 'NOT_AUTHORIZED' ? 'DENEGADO' : err.code);
+          log('ERROR del GPS: ' + err.code + ' ' + (err.message || ''));
+        }
+        pararTodo();        // no dejar el cronómetro corriendo para nada
         return;
       }
       marca('d-permiso', true, 'Concedido');
