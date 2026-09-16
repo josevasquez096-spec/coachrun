@@ -130,26 +130,32 @@ log('Listo. ' + (nativo ? 'Dentro de la app de Android.' : 'Abierto en un navega
 // denegado de antes, el complemento de segundo plano se queda callado (ni un
 // punto ni un error) y parece que no hace nada.
 /**
- * Comprueba (y si hace falta pide) el permiso de ubicación.
+ * Mira el permiso de ubicación **solo para enseñarlo**. NO decide nada.
  *
- * Con tiempo límite a propósito: encadenar dos diálogos de permiso seguidos
- * hace que el segundo a veces no llegue a salir y la promesa se quede colgada
- * para siempre. Cuando eso pasaba, la app se quedaba con el botón apagado y sin
- * decir nada, y parecía que "no arrancaba".
+ * Lección aprendida a base de golpes: esta comprobación devolvía algo distinto
+ * de "granted" aunque Android tuviera el permiso concedido (pasa, por ejemplo,
+ * si se concedió la ubicación *aproximada*: el permiso fino figura denegado).
+ * Como el arranque dependía de ella, la app se negaba a medir con el permiso
+ * puesto. Ahora quien decide es el propio complemento de GPS, que pide el
+ * permiso por su cuenta y avisa por su callback si de verdad no lo tiene.
  */
 async function mirarPermiso(pedir) {
   if (!nativo) return null;
   try {
     var e = await conTiempo(Geolocation.checkPermissions(), 8000, 'comprobar el permiso');
-    if (pedir && e.location !== 'granted') {
+    if (pedir && e.location !== 'granted' && e.coarseLocation !== 'granted') {
       log('Pidiendo el permiso de ubicación. Elige "Mientras uso la aplicación".');
       e = await conTiempo(Geolocation.requestPermissions(), 60000, 'contestar al permiso');
     }
-    marca('d-permiso', e.location === 'granted', 'Concedido', e.location === 'denied' ? 'DENEGADO' : e.location);
-    return e.location;
+    var fino = e.location === 'granted', burdo = e.coarseLocation === 'granted';
+    marca('d-permiso', fino || burdo, fino ? 'Concedido' : 'Solo aproximado', e.location);
+    log('Permiso de ubicación → precisa: ' + e.location + ' · aproximada: ' + e.coarseLocation);
+    if (!fino && burdo) log('OJO: está concedida solo la ubicación APROXIMADA. Mide fatal. En los ajustes ' +
+      'de la app, en Ubicación, activa "Usar ubicación precisa".');
+    return fino ? 'granted' : (burdo ? 'coarse' : e.location);
   } catch (err) {
     marca('d-permiso', false, '', 'no contestó');
-    log('PROBLEMA con el permiso: ' + (err.message || err));
+    log('No se pudo leer el permiso: ' + (err.message || err) + ' (seguimos igual)');
     return null;
   }
 }
@@ -159,11 +165,7 @@ mirarPermiso(false);
 document.getElementById('b-punto').onclick = async function () {
   if (!nativo) { log('Esto solo funciona dentro de la app.'); return; }
   this.disabled = true;
-  var estado = await mirarPermiso(true);
-  if (estado !== 'granted') {
-    log('Sin permiso de ubicación (' + estado + '). Toca "Abrir los ajustes de la app" y concédelo.');
-    this.disabled = false; return;
-  }
+  await mirarPermiso(true);
   log('Pidiendo una posición… (puede tardar hasta 30 s la primera vez)');
   try {
     var pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
@@ -216,13 +218,12 @@ document.getElementById('b-empezar').onclick = async function () {
   try {
     // La ubicación va PRIMERO y sola. El aviso de notificación se pide después,
     // ya midiendo: dos diálogos seguidos hacían que el segundo no saliera.
-    var estado = await mirarPermiso(true);
-    if (estado !== 'granted') {
-      log('Sin permiso de ubicación (' + estado + ') no se puede medir. Toca "Abrir los ajustes de la app", ' +
-          'concede Ubicación, y vuelve a darle a Empezar.');
-      pararTodo();
-      return;
-    }
+    //
+    // Y pase lo que pase aquí, SE SIGUE. Esta llamada solo informa: quien manda
+    // es el complemento de GPS, que pide el permiso por su cuenta y avisa por su
+    // callback si de verdad falta. Cuando el arranque dependía de esto, la app se
+    // negaba a medir con el permiso concedido.
+    await mirarPermiso(true);
 
     // Si en medio minuto no llega ni un punto, algo va mal: mejor decirlo que
     // dejar al usuario mirando ceros.
