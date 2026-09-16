@@ -48,15 +48,31 @@ var mayorHueco = 0;   // el silencio más largo del GPS, que delata si Android m
 var OBJETIVO = 100;   // metros en línea recta que hacen la prueba concluyente
 var lineas = [];
 
+// Hasta ahora, si el guion reventaba no se veía nada: la pantalla se quedaba
+// quieta y parecía que la app "no arrancaba". Ahora el fallo sale en el registro.
+window.onerror = function (msg, src, lin) { log('FALLO: ' + msg + ' (línea ' + lin + ')'); return false; };
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e.reason;
+  log('FALLO sin capturar: ' + (r && (r.message || r.errorMessage) ? (r.message || r.errorMessage) : r));
+});
+
+/** Corta la espera si una llamada nativa no contesta, en vez de colgarse para siempre. */
+function conTiempo(promesa, ms, queEs) {
+  return Promise.race([promesa, new Promise(function (_, mal) {
+    setTimeout(function () { mal(new Error('sin respuesta en ' + Math.round(ms / 1000) + ' s al ' + queEs)); }, ms);
+  })]);
+}
+
 function log(t) {
   var h = new Date().toLocaleTimeString('es');
   lineas.unshift(h + '  ' + t);
   if (lineas.length > 200) lineas.pop();
   document.getElementById('log').textContent = lineas.join('\n');
 }
-function txt(id, v) { document.getElementById(id).textContent = v; }
+function txt(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
 function marca(id, bien, si, no) {
   var e = document.getElementById(id);
+  if (!e) return;
   e.textContent = bien ? (si || 'Sí') : (no || 'No');
   e.className = bien ? 'ok' : 'mal';
 }
@@ -72,11 +88,14 @@ function pintar() {
   txt('m-tiempo', arranque ? mmss((Date.now() - arranque) / 1000) : '0:00');
   txt('m-hace', ultimoT ? Math.round((Date.now() - ultimoT) / 1000) + ' s' : '—');
   var mh = document.getElementById('m-hueco');
-  mh.textContent = mayorHueco ? Math.round(mayorHueco) + ' s' : '—';
-  mh.className = mayorHueco > 30 ? 'mal' : mayorHueco ? 'ok' : '';
+  if (mh) {
+    mh.textContent = mayorHueco ? Math.round(mayorHueco) + ' s' : '—';
+    mh.className = mayorHueco > 30 ? 'mal' : mayorHueco ? 'ok' : '';
+  }
   var recta = inicioPunto && f.suave ? hav(inicioPunto, f.suave) : 0;
   txt('m-recta', Math.round(recta) + ' / ' + OBJETIVO + ' m');
   var barra = document.getElementById('m-barra');
+  if (!barra) return;
   barra.style.width = Math.min(100, (recta / OBJETIVO) * 100) + '%';
   if (recta >= OBJETIVO) {
     barra.parentNode.className = 'barra hecho';
@@ -110,17 +129,27 @@ log('Listo. ' + (nativo ? 'Dentro de la app de Android.' : 'Abierto en un navega
 // El permiso se mira al abrir, sin esperar a que se pulse nada: si ya estaba
 // denegado de antes, el complemento de segundo plano se queda callado (ni un
 // punto ni un error) y parece que no hace nada.
+/**
+ * Comprueba (y si hace falta pide) el permiso de ubicación.
+ *
+ * Con tiempo límite a propósito: encadenar dos diálogos de permiso seguidos
+ * hace que el segundo a veces no llegue a salir y la promesa se quede colgada
+ * para siempre. Cuando eso pasaba, la app se quedaba con el botón apagado y sin
+ * decir nada, y parecía que "no arrancaba".
+ */
 async function mirarPermiso(pedir) {
   if (!nativo) return null;
   try {
-    var e = await Geolocation.checkPermissions();
-    if (pedir && e.location !== 'granted') e = await Geolocation.requestPermissions();
-    var ok = e.location === 'granted';
-    marca('d-permiso', ok, 'Concedido', e.location === 'denied' ? 'DENEGADO' : e.location);
+    var e = await conTiempo(Geolocation.checkPermissions(), 8000, 'comprobar el permiso');
+    if (pedir && e.location !== 'granted') {
+      log('Pidiendo el permiso de ubicación. Elige "Mientras uso la aplicación".');
+      e = await conTiempo(Geolocation.requestPermissions(), 60000, 'contestar al permiso');
+    }
+    marca('d-permiso', e.location === 'granted', 'Concedido', e.location === 'denied' ? 'DENEGADO' : e.location);
     return e.location;
   } catch (err) {
-    marca('d-permiso', false, '', 'no se pudo leer');
-    log('No se pudo leer el permiso: ' + (err.message || err));
+    marca('d-permiso', false, '', 'no contestó');
+    log('PROBLEMA con el permiso: ' + (err.message || err));
     return null;
   }
 }
@@ -155,41 +184,55 @@ document.getElementById('b-ajustes').onclick = function () {
   else log('Abre a mano: Ajustes de Android → Aplicaciones → MyCoachRuns → Permisos.');
 };
 
+/** Deja la pantalla como al principio, pase lo que pase. */
+function pararTodo() {
+  if (reloj) { clearInterval(reloj); reloj = null; }
+  document.getElementById('b-empezar').disabled = false;
+  document.getElementById('b-parar').disabled = true;
+}
+
+/** El permiso de la notificación se pide aparte y sin esperarlo: ver mirarPermiso. */
+async function pedirAvisos() {
+  if (!AVISOS) return;
+  try {
+    var pa = await conTiempo(AVISOS.checkPermissions(), 8000, 'comprobar los avisos');
+    if (pa.display !== 'granted') pa = await conTiempo(AVISOS.requestPermissions(), 60000, 'contestar a los avisos');
+    marca('d-aviso', pa.display === 'granted', 'Concedido', pa.display);
+    if (pa.display !== 'granted') log('Sin permiso de notificación: se mide igual, pero Android podría dormir la app al bloquear.');
+  } catch (e) { marca('d-aviso', false, '', 'no contestó'); }
+}
+
 document.getElementById('b-empezar').onclick = async function () {
   if (!BG) { log('Sin complemento nativo: esta prueba solo funciona dentro de la app.'); return; }
-  dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0;
+  dist = 0; crudo = 0; previo = null; recibidos = 0; usados = 0; ultimoT = 0;
   inicioPunto = null; pendiente = 0; umbralAhora = 8; avisado = false; mayorHueco = 0;
-  document.getElementById('m-barra').parentNode.className = 'barra';
+  var b = document.getElementById('m-barra');
+  if (b) b.parentNode.className = 'barra';
   f = { suave: null, ancla: null, ultimo: null };
   arranque = Date.now();
   this.disabled = true; document.getElementById('b-parar').disabled = false;
   reloj = setInterval(pintar, 1000);
-  // Desde Android 13 la notificación necesita su propio permiso, y sin
-  // notificación el sistema no deja mantener el servicio en segundo plano.
-  if (AVISOS) {
-    try {
-      var pa = await AVISOS.checkPermissions();
-      if (pa.display !== 'granted') pa = await AVISOS.requestPermissions();
-      marca('d-aviso', pa.display === 'granted', 'Concedido', pa.display);
-    } catch (e) { marca('d-aviso', false, '', 'no disponible'); }
-  }
-  var estado = await mirarPermiso(true);
-  if (estado !== 'granted') {
-    log('Sin permiso de ubicación (' + estado + '): el GPS en segundo plano no va a dar señales de vida. ' +
-        'Toca "Abrir los ajustes de la app" y concédelo.');
-    this.disabled = false; document.getElementById('b-parar').disabled = true;
-    clearInterval(reloj); reloj = null; arranque = null;
-    return;
-  }
-  // Si en medio minuto no ha llegado ni un punto, algo va mal: mejor decirlo
-  // que dejar al usuario mirando ceros durante media hora.
-  var vigia = setTimeout(function () {
-    if (recibidos === 0) log('AVISO: medio minuto sin recibir ni un punto. Si estás dentro de un edificio, ' +
-      'sal a la calle. Si ya estás fuera, esto es el fallo que hay que reportar.');
-  }, 30000);
-  log('Arrancando el GPS en segundo plano…');
+
   try {
-    watcher = await BG.addWatcher({
+    // La ubicación va PRIMERO y sola. El aviso de notificación se pide después,
+    // ya midiendo: dos diálogos seguidos hacían que el segundo no saliera.
+    var estado = await mirarPermiso(true);
+    if (estado !== 'granted') {
+      log('Sin permiso de ubicación (' + estado + ') no se puede medir. Toca "Abrir los ajustes de la app", ' +
+          'concede Ubicación, y vuelve a darle a Empezar.');
+      pararTodo();
+      return;
+    }
+
+    // Si en medio minuto no llega ni un punto, algo va mal: mejor decirlo que
+    // dejar al usuario mirando ceros.
+    var vigia = setTimeout(function () {
+      if (recibidos === 0) log('AVISO: medio minuto sin recibir ni un punto. Si estás dentro de un edificio, ' +
+        'sal a la calle. Si ya estás fuera, esto es el fallo que hay que reportar.');
+    }, 30000);
+
+    log('Arrancando el GPS en segundo plano…');
+    watcher = await conTiempo(BG.addWatcher({
       backgroundTitle: 'MyCoachRuns está midiendo',
       backgroundMessage: 'Toca para volver a la app.',
       requestPermissions: true,
@@ -228,12 +271,14 @@ document.getElementById('b-empezar').onclick = async function () {
       txt('m-acc', Math.round(pos.accuracy));
       if (recibidos % 10 === 1) log('punto ' + recibidos + ' · ±' + Math.round(pos.accuracy) + ' m · ' + (dist / 1000).toFixed(2) + ' km');
       pintar();
-    });
-    log('Midiendo (vigilante ' + watcher + '). Ya puedes bloquear el teléfono.');
-  } catch (e) {
+    }), 20000, 'arrancar el GPS');
+
     clearTimeout(vigia);
-    log('No se pudo arrancar: ' + (e && (e.message || e.errorMessage) ? (e.message || e.errorMessage) : JSON.stringify(e)));
-    this.disabled = false;
+    log('MIDIENDO (vigilante ' + watcher + '). Ya puedes bloquear el teléfono.');
+    pedirAvisos();          // sin await: que no bloquee la medición
+  } catch (e) {
+    log('NO ARRANCÓ: ' + (e && (e.message || e.errorMessage) ? (e.message || e.errorMessage) : JSON.stringify(e)));
+    pararTodo();
   }
 };
 
@@ -253,6 +298,7 @@ document.getElementById('b-copiar').onclick = function () {
     'nativo: ' + nativo + ' · complemento: ' + !!BG + '\n' +
     'filtrado: ' + (dist / 1000).toFixed(3) + ' km · sin filtrar: ' + (crudo / 1000).toFixed(3) + ' km\n' +
     'en línea recta desde el inicio: ' + (inicioPunto && f.suave ? Math.round(hav(inicioPunto, f.suave)) : 0) + ' m\n' +
+    'mayor silencio del GPS: ' + Math.round(mayorHueco) + ' s\n' +
     'puntos: ' + recibidos + ' recibidos, ' + usados + ' usados\n' +
     'tiempo: ' + (arranque ? mmss((Date.now() - arranque) / 1000) : '—') + '\n\n' + lineas.join('\n');
   if (navigator.share) navigator.share({ text: t }).catch(function () {});
