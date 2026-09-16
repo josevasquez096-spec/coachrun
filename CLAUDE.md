@@ -220,9 +220,22 @@ Medido en un Samsung real (no simulado), con la app en primer plano:
   acercarse. **Falta el mismo contraste corriendo**, que es el uso real, antes
   de plantearse recalibrar nada.
 
-Falta también cerrar la prueba que decide si la app nativa merece la pena: **con
-la pantalla bloqueada**. La pantalla guarda el "mayor silencio del GPS" de la
-sesión, que es lo que delata si Android durmió la app.
+- **Con la pantalla bloqueada todo el rato: siguió midiendo.** Esta era la
+  prueba que decidía si la app nativa merecía la pena, y la respuesta es sí.
+  Es justo lo que el navegador NO puede hacer, y el único motivo de peso para
+  empaquetar la app. El servicio en primer plano de Android aguanta.
+
+Queda una pregunta abierta, y decide cuánto trabajo falta: **si el puente nativo
+llega a la web cargada desde internet**. La cáscara inyecta `window.Capacitor`
+en la página local (probado), pero no se ha comprobado en la remota. El botón
+"Abrir la app web" lo mide con `components/PuenteNativo.tsx`:
+
+- **Verde** → la web actual puede usar el GPS nativo tal cual. Bastaría con
+  empaquetar `@capacitor/core` en el proyecto web y hacer que `lib/session.ts`
+  use el complemento cuando corra dentro de la app. Camino corto.
+- **Naranja** → hay que llevar la web dentro del APK (convertirla a una sola
+  página, un solo código) o hacer app nativa aparte (dos códigos). Camino largo,
+  y esa decisión se toma entonces.
 
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
