@@ -21,6 +21,16 @@ function hav(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 var f = { suave: null, ancla: null, ultimo: null };
+
+/** Los metros del último tramo que quedó a medias al parar. La app web ya los
+ *  cuenta (`cerrar()` en lib/geo.ts) y aquí faltaban: la prueba salía hasta 8 m
+ *  corta y la comparación con el reloj era injusta. */
+function cerrarTramo() {
+  if (!f.ancla || !f.suave) return 0;
+  var d = hav(f.ancla, f.suave);
+  f.ancla = { lat: f.suave.lat, lng: f.suave.lng, t: f.suave.t };
+  return d;
+}
 function medir(p) {
   var acc = p.acc || 0;
   if (acc > ACC_MAX) return { avance: 0, usado: false };
@@ -311,6 +321,8 @@ document.getElementById('b-empezar').onclick = async function () {
 
 document.getElementById('b-parar').onclick = async function () {
   if (watcher && BG) { try { await BG.removeWatcher({ id: watcher }); } catch (e) {} }
+  var resto = cerrarTramo();
+  if (resto > 0) { dist += resto; log('Último tramo sin confirmar: +' + Math.round(resto) + ' m'); }
   watcher = null; clearInterval(reloj); reloj = null;
   this.disabled = true; document.getElementById('b-empezar').disabled = false;
   log('PARADO. Filtrado ' + (dist / 1000).toFixed(3) + ' km · sin filtrar ' + (crudo / 1000).toFixed(3) + ' km · ' +

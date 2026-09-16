@@ -213,9 +213,16 @@ Medido en un Samsung real (no simulado), con la app en primer plano:
   descartado), subiendo a un ritmo constante de ~1,05 m/s, que es el paso real.
   De 137 puntos descartó 2 por malos.
 
-Falta la prueba que decide si la app nativa merece la pena: **con la pantalla
-bloqueada**. La pantalla guarda el "mayor silencio del GPS" de la sesión, que es
-lo que delata si Android durmió la app.
+- **Contra el Garmin, 10 min caminando:** reloj 0,86 km, app **0,82 km**. Un
+  4,7 % por debajo. Por debajo, que es el lado bueno. Caminando es el peor caso
+  del filtro: a poca velocidad el umbral pesa más, y las esquinas de un paseo
+  por el barrio se recortan. En carrera, más rápido y más recto, debería
+  acercarse. **Falta el mismo contraste corriendo**, que es el uso real, antes
+  de plantearse recalibrar nada.
+
+Falta también cerrar la prueba que decide si la app nativa merece la pena: **con
+la pantalla bloqueada**. La pantalla guarda el "mayor silencio del GPS" de la
+sesión, que es lo que delata si Android durmió la app.
 
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
