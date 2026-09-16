@@ -16,7 +16,9 @@ permissions:
 
 jobs:
   compilar:
-    runs-on: ubuntu-latest
+    # Fijada a propósito: con 'ubuntu-latest' la máquina cambia sola y ya nos
+    # rompió una compilación sin haber tocado nosotros nada.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +34,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      # Antes se usaba android-actions/setup-android, pero intentaba instalar el
+      # paquete 'tools', que ya no existe en las versiones nuevas del kit, y la
+      # compilación moría ahí. La máquina de GitHub ya trae el kit de Android:
+      # basta con apuntar a él y asegurarse de que están las piezas que usamos.
+      - name: Preparar el kit de Android
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "Kit de Android en: $SDK"
+          SDKM=$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+          echo "sdkmanager: ${SDKM:-no encontrado}"
+          if [ -n "$SDKM" ]; then
+            yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+            "$SDKM" "platform-tools" "platforms;android-34" "build-tools;34.0.0" || true
+          fi
+          echo "sdk.dir=$SDK" > movil/android/local.properties
+          echo "--- plataformas disponibles ---"; ls "$SDK/platforms" || true
+          echo "--- build-tools disponibles ---"; ls "$SDK/build-tools" || true
 
       - name: Instalar dependencias
         working-directory: movil
