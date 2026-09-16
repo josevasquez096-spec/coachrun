@@ -50,6 +50,24 @@ posición: separa "el GPS del teléfono no va" de "el segundo plano no va", que
 son problemas distintos con arreglos distintos. Y un vigilante que avisa si
 pasan 30 s sin recibir nada.
 
+## "NOT_AUTHORIZED" significa dos cosas distintas
+
+La que más salidas a la calle costó. El complemento devuelve el mismo código
+`NOT_AUTHORIZED` para dos situaciones que no tienen nada que ver:
+
+    if (permiso != GRANTED)            { ...pedirlo... }
+    else if (!isLocationEnabled(ctx))  { reject("Location services disabled.", "NOT_AUTHORIZED") }
+
+La segunda rama **solo se alcanza con el permiso ya concedido**: lo que está
+apagado es el interruptor general de Ubicación de Android, el que afecta a todas
+las apps. La pantalla lo pintaba como "permiso DENEGADO", el usuario iba a los
+ajustes de la app, veía el permiso concedido, y vuelta a empezar.
+
+Se distinguen por el texto (`ubicacionApagada()` mira "location services" y
+"not enabled"), y el caso del interruptor sale como un aviso grande y naranja
+que dice dónde encenderlo. Si algún día se cambia de complemento, esto hay que
+volver a mirarlo.
+
 ## Nunca bloquear el arranque con una comprobación de permiso
 
 Cuarta cosa que nos mordió, y la más cara: la app comprobaba el permiso de

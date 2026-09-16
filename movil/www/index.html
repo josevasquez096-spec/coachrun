@@ -29,6 +29,8 @@ h1 span { color:var(--verde-txt) }
 .btn.stop { background:var(--alerta); border-color:var(--alerta) }
 .btn.ghost { background:transparent; color:var(--ink) }
 .btn:disabled { opacity:.45 }
+.aviso-gordo { background:var(--alerta); color:#fff; border-radius:14px; padding:14px; margin-bottom:10px;
+  font-size:14px; line-height:1.5 }
 .barra { height:8px; background:var(--bg); border-radius:999px; overflow:hidden; margin:2px 0 6px }
 .barra div { height:100%; width:0; background:var(--lima); transition:width .3s }
 .barra.hecho div { background:var(--verde-txt) }
@@ -40,6 +42,13 @@ h1 span { color:var(--verde-txt) }
 <body>
 <h1>MyCoach<span>Runs</span> · prueba de GPS</h1>
 <p class="sub">Sirve para saber dos cosas: si la app puede seguir midiendo con la pantalla apagada, y cuánto se parece al reloj.</p>
+
+<div id="apagada" class="aviso-gordo" hidden>
+  <b>La ubicación del teléfono está APAGADA.</b><br>
+  No es un permiso de la app: es el interruptor de Android que afecta a todas.
+  Baja la barra de notificaciones y enciende <b>«Ubicación»</b>, o entra en
+  Ajustes → Ubicación. Después vuelve aquí y dale a Empezar.
+</div>
 
 <div class="card">
   <div class="rot">DIAGNÓSTICO</div>
