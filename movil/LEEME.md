@@ -50,6 +50,21 @@ posición: separa "el GPS del teléfono no va" de "el segundo plano no va", que
 son problemas distintos con arreglos distintos. Y un vigilante que avisa si
 pasan 30 s sin recibir nada.
 
+## Nunca bloquear el arranque con una comprobación de permiso
+
+Cuarta cosa que nos mordió, y la más cara: la app comprobaba el permiso de
+ubicación con `@capacitor/geolocation` y **se negaba a arrancar** si no salía
+`granted`. Con el permiso concedido en los ajustes de Android, la comprobación
+seguía devolviendo otra cosa (pasa, entre otros casos, si lo concedido es la
+ubicación *aproximada*: el permiso fino figura denegado). Resultado: la app no
+medía nunca y decía "sin permiso de ubicación" con el permiso puesto.
+
+Regla: **quien pide el permiso es quien lo necesita**. El complemento de segundo
+plano ya lo pide solo (`requestPermissions: true`) y avisa por su callback con
+`NOT_AUTHORIZED` si de verdad falta. `mirarPermiso()` es solo informativa y no
+decide nada; enseña por separado la precisa y la aproximada, porque tener solo
+la aproximada mide fatal y conviene verlo.
+
 ## Las distancias cortas marcan cero, y está bien
 
 Tercera confusión: caminar 10 m por el patio marca 0,00 km. No es un fallo. El
