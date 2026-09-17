@@ -5,3 +5,7 @@ node_modules
 # generados por Next y TypeScript al compilar
 next-env.d.ts
 *.tsbuildinfo
+
+# la compilación estática para el APK (se genera con scripts/compilar-movil.sh)
+out
+movil/www

@@ -1,1 +1,2 @@
-www/app.js
+# www/ entero se genera con scripts/compilar-movil.sh: no se guarda en el repo
+www

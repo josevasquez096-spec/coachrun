@@ -1,6 +1,10 @@
 # Compila el APK de Android en la nube: aquí no hace falta ningún computador
 # con Android Studio. Al terminar deja el archivo colgado en la pestaña
 # "Releases" del repositorio, con enlace público para descargarlo al teléfono.
+#
+# Desde la v5 el APK lleva la web entera dentro (las 8 pantallas), no solo la
+# pantalla de prueba del GPS. Por eso hay que compilar también el proyecto de
+# la raíz: `scripts/compilar-movil.sh` lo hace y deja el resultado en movil/www.
 name: APK de Android
 
 on:
@@ -9,6 +13,13 @@ on:
     branches: [main]
     paths:
       - 'movil/**'
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'next.config.js'
+      - 'package-lock.json'
+      - 'scripts/compilar-movil.sh'
       - '.github/workflows/apk.yml'
 
 permissions:
@@ -26,7 +37,9 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: movil/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            movil/package-lock.json
 
       # Capacitor 6 y el complemento de Android piden Java 17.
       - uses: actions/setup-java@v4
@@ -52,15 +65,41 @@ jobs:
           echo "--- plataformas disponibles ---"; ls "$SDK/platforms" || true
           echo "--- build-tools disponibles ---"; ls "$SDK/build-tools" || true
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias de la web
+        run: npm ci
+
+      - name: Instalar dependencias de la cáscara
         working-directory: movil
         run: npm ci
 
-      # Empaqueta src/app.js dentro de www/. Hace falta: `registerPlugin` no
-      # viene con Android, la trae @capacitor/core y hay que meterla dentro.
-      - name: Empaquetar la pantalla de prueba
-        working-directory: movil
-        run: npm run build
+      # Compila las pantallas como archivos sueltos y las deja en movil/www,
+      # junto con la pantalla de diagnóstico del GPS en /prueba/.
+      # Las llamadas de API apuntan al servidor de Vercel: la app las hace por
+      # internet, llevando la sesión en la cabecera Authorization.
+      # Las claves NEXT_PUBLIC_ se quedan grabadas dentro del APK al compilar
+      # (son las mismas que ya viajan a cualquier navegador, no son secretas).
+      # Si faltan, la app se instalaría y no podría entrar: mejor parar aquí y
+      # decirlo claro que entregar un APK roto.
+      - name: Comprobar las claves
+        run: |
+          faltan=""
+          [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] || faltan="$faltan NEXT_PUBLIC_SUPABASE_URL"
+          [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ] || faltan="$faltan NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          if [ -n "$faltan" ]; then
+            echo "::error::Faltan estas claves en el repositorio:$faltan"
+            echo "Se añaden en GitHub → Settings → Secrets and variables → Actions → New repository secret."
+            echo "Son los mismos valores que ya están en Vercel (Settings → Environment Variables)."
+            exit 1
+          fi
+          echo "Claves presentes."
+
+      - name: Meter la web dentro del APK
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+          NEXT_PUBLIC_APP_URL: https://coachrun-delta.vercel.app
+        run: ./scripts/compilar-movil.sh https://coachrun-delta.vercel.app
 
       - name: Pasar la web a la cáscara de Android
         working-directory: movil
@@ -90,7 +129,9 @@ jobs:
           gh release create apk-prueba "${{ steps.apk.outputs.archivo }}" \
             --title "APK de prueba · ${{ steps.apk.outputs.fecha }}" \
             --prerelease \
-            --notes "Versión de prueba para medir el GPS con la pantalla apagada.
+            --notes "La app entera dentro del teléfono, usando el GPS nativo (sigue midiendo con la pantalla apagada).
+
+          La pantalla de diagnóstico del GPS sigue disponible en /prueba/ dentro de la app.
 
           **Está firmada con una clave de pruebas**, así que para instalar una versión nueva hay que
           desinstalar la anterior primero. Eso se arregla cuando pasemos a la app de verdad.

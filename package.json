@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "build:movil": "./scripts/compilar-movil.sh"
   },
   "dependencies": {
+    "@capacitor/core": "^6.2.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.0",
     "@types/web-push": "^3.6.4",

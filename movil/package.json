@@ -4,7 +4,7 @@
   "private": true,
   "description": "Cascara de Android para MyCoachRuns. Aparte del proyecto web a proposito: Vercel compila la raiz y no debe arrastrar estas dependencias.",
   "scripts": {
-    "build": "esbuild src/app.js --bundle --format=iife --target=es2019 --minify --outfile=www/app.js",
+    "build": "cd .. && ./scripts/compilar-movil.sh",
     "sync": "npm run build && cap sync android"
   },
   "dependencies": {

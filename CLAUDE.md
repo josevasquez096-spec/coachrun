@@ -47,7 +47,9 @@ lenguaje llano, y evita jerga sin traducir. Cuando algo falle, di qué mirar y
 dónde, no solo el nombre del error.
 
 ## Pila
-- Next.js 14 (App Router, TypeScript) desplegado en Vercel
+- Next.js 14 (App Router, TypeScript) desplegado en Vercel. Desde la v5 las
+  pantallas son **de cliente**, para que el mismo código sirva también dentro
+  del APK de Android (`output: 'export'`); ver la sección Android.
 - Supabase: Postgres + Auth (correo/contraseña y enlace mágico) + Storage (`avatars`)
 - Leaflet + OpenStreetMap para el mapa
 - `web-push` para notificaciones
@@ -197,11 +199,39 @@ al grupo con un solo mensaje cuando el dominio ya esté en verde.
 
 `mycoachruns.com` ya está en `allowNavigation` de la cáscara de Android.
 
-## Android
+## Android (v5)
 La cáscara de Android está en `movil/` (Capacitor), aparte para que Vercel no
-arrastre sus dependencias. Hoy es una **app de prueba** para medir el GPS en
-segundo plano y decidir el camino. Todo el detalle, los porqués y las trampas
-en `movil/LEEME.md`. El APK lo compila GitHub Actions y queda en Releases.
+arrastre sus dependencias. **Lleva la app entera dentro**: las 8 pantallas
+viajan en el APK y la grabación usa el GPS nativo, que sigue midiendo con la
+pantalla apagada. Todo el detalle, los porqués y las trampas en `movil/LEEME.md`.
+El APK lo compila GitHub Actions y queda en Releases (entrega `apk-prueba`).
+
+**Un solo código, dos compilaciones** (`next.config.js` mira `APP_MOVIL`):
+
+- Sin la variable: la web de siempre para Vercel, pantallas + rutas de API.
+- `APP_MOVIL=1`: `output: 'export'`, solo pantallas, archivos sueltos para el APK.
+
+Se compila con `./scripts/compilar-movil.sh [dirección]`, que aparta `app/api` y
+`app/auth/callback` (son de servidor y no se exportan), compila, las devuelve, y
+deja el resultado en `movil/www` (generado, no se guarda en el repo).
+
+Las piezas que sostienen esto, y que **no hay que romper**:
+
+- **Todas las pantallas son de cliente**, con `usePantalla()` de `lib/pantalla.ts`:
+  pide sesión y perfil a `/api/perfil` (el equivalente en JSON de `requireUser()`)
+  y hace sus consultas desde el navegador; RLS ya las permite. Efecto secundario
+  bueno: cambiar de pestaña es instantáneo, ya no hay ida y vuelta al servidor.
+- **Nunca `fetch('/api/...')` a pelo**: siempre `pedir()` de `lib/api.ts`, que le
+  pone delante la dirección de Vercel (`NEXT_PUBLIC_API_URL`) y adjunta la sesión
+  en `Authorization: Bearer`. Dentro del APK no hay cookies de ese dominio ni
+  existe esa ruta relativa.
+- **El servidor acepta cookie o cabecera**: `usuarioActual()` de
+  `lib/supabase-server.ts`, en las 12 rutas de API.
+- **`lib/gps.ts` es el único sitio que decide** GPS nativo o del navegador.
+  `lib/session.ts` no sabe cuál le habla: recibe posiciones y ya.
+- La compilación del APK necesita `NEXT_PUBLIC_SUPABASE_URL` y
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` guardadas en los secretos del repositorio en
+  GitHub (los mismos valores de Vercel): quedan grabadas dentro del APK.
 
 Medido en un Samsung real (no simulado), con la app en primer plano:
 
@@ -225,29 +255,17 @@ Medido en un Samsung real (no simulado), con la app en primer plano:
   Es justo lo que el navegador NO puede hacer, y el único motivo de peso para
   empaquetar la app. El servicio en primer plano de Android aguanta.
 
-**El puente nativo NO llega a la web remota.** Probado: al abrir
-`coachrun-delta.vercel.app` desde dentro de la cáscara, el distintivo sale
-naranja ("SIN puente nativo"): `window.Capacitor` no existe en esa página.
-Android solo inyecta el puente en los archivos que viajan dentro del APK.
+**El puente nativo NO llega a la web remota**, y por eso hubo que meter la web
+dentro. Probado: al abrir `coachrun-delta.vercel.app` desde dentro de la
+cáscara, el distintivo sale naranja ("SIN puente nativo"): `window.Capacitor` no
+existe en esa página. Android solo inyecta el puente en los archivos que viajan
+dentro del APK. No hay atajo.
 
-Conclusión: **no hay atajo**. Para que la app use el GPS nativo, la web tiene
-que ir dentro del APK. Lo que eso implica, medido:
-
-- Las 7 páginas son cascarones finos (26-66 líneas cada una, ~250 en total):
-  hacen `requireUser()` y un par de consultas, y se lo pasan todo a los
-  componentes. Habría que pasar esas consultas al navegador; RLS ya las permite.
-- Los **1.757 líneas de componentes y las 510 de lógica pura no se tocan**: ya
-  son de cliente.
-- Las 12 rutas de API que usan la sesión por cookie se arreglan en **un solo
-  sitio**: que `supabaseServer()` acepte también `Authorization: Bearer`.
-- Harían falta dos compilaciones del mismo código: la de Vercel como ahora, y
-  una estática (`output: 'export'`) para meter en el APK, apuntando las llamadas
-  de API a la dirección absoluta de Vercel.
-- Y que `lib/session.ts` use el complemento de GPS nativo cuando corra dentro
-  de la app, en vez de `navigator.geolocation`.
-
-Efecto secundario bueno: la web se convierte en una sola página, así que cambiar
-de pestaña pasa a ser instantáneo (ya no hay ida y vuelta al servidor por tab).
+La pantalla de diagnóstico del GPS se conserva en `movil/prueba/` y se publica
+en `/prueba/` dentro de la app: costó cinco salidas a la calle averiguar lo que
+mide. Ojo, lleva **una copia a mano del filtro de `lib/geo.ts`** (no pasa por el
+compilador del proyecto): si se tocan el peso o el umbral, hay que cambiarlos
+allí también.
 
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
@@ -296,23 +314,27 @@ pantalla y así el número no parpadea. Se refresca cada 30 s y al volver a la a
   "3 30" y "Serie 2/12" como "Serie 2 de 12", o la voz lo lee como una división.
 
 ## Que la app vaya fluida
-Todas las páginas son `force-dynamic` y cada una hace `requireUser()` (validar
-sesión + leer perfil) antes de su propia consulta. Eso son varias idas y vueltas
-por pestaña, así que:
+Hasta la v4 cada página era `force-dynamic` y hacía `requireUser()` en el
+servidor antes de su propia consulta: varias idas y vueltas por pestaña. Desde
+la v5 **todas las pantallas son de cliente** (`usePantalla()`), así que cambiar
+de pestaña no vuelve al servidor: la sesión y el perfil se piden una sola vez a
+`/api/perfil` y se guardan en el módulo. Lo demás sigue en pie:
 
 - `app/loading.tsx` enseña un esqueleto en cuanto se toca la pestaña. Sin él el
   teléfono se quedaba con la pantalla anterior y el cambio parecía lento.
 - `aligerar()` de `lib/actividad.ts` recorta `activities.raw` antes de mandarlo al
   teléfono. La respuesta entera de Strava son cientos de kilobytes por carrera.
-- El perfil trae ya `max_hr`/`resting_hr` desde `requireUser()`: no repetir esa
+- El perfil trae ya `max_hr`/`resting_hr` desde `usePantalla()`: no repetir esa
   consulta en las pantallas.
 - La ficha del alumno pide **solo** la lista de la pestaña que se mira, y en paralelo.
 - La fuente va con `next/font` (servida desde el propio dominio). El `<link>` a
   Google Fonts bloqueaba el primer dibujado.
 
 ## Límites conocidos
-- El navegador corta el GPS con la pantalla bloqueada (sobre todo iOS). Para
-  tiradas largas, el reloj es la vía fiable.
+- **En el navegador** el GPS se corta con la pantalla bloqueada (sobre todo
+  iOS). Para tiradas largas desde la web, el reloj es la vía fiable. **La app de
+  Android ya no tiene este límite**; en iPhone sigue igual porque todavía no hay
+  app.
 - Notificaciones push en iPhone solo si la app está añadida a la pantalla de inicio.
 - Bluetooth (cinturón de pulso) solo en Android con Chrome.
 - Supabase con SMTP propio sin configurar: 2 correos por hora. Por eso el acceso

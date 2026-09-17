@@ -5,23 +5,70 @@ Vercel compila la raíz del repositorio y no debe arrastrar estas dependencias.
 
 ## Qué es esto ahora mismo
 
-Una **app de prueba**, no la app final. Su único trabajo es responder a dos preguntas
-antes de comprometernos con el camino largo:
+La **app entera dentro del teléfono**. Las 8 pantallas de la web viajan dentro
+del APK como archivos sueltos, y el motor de grabación usa el GPS nativo de
+Android, que **sigue midiendo con la pantalla apagada** (eso es lo que el
+navegador no puede hacer, y el único motivo de peso para empaquetar la app).
 
-1. ¿Puede medir con la pantalla apagada? (`www/index.html`, que usa el GPS nativo
-   en segundo plano a través de un servicio en primer plano de Android.)
-2. Cuando la cáscara carga la web desde internet en vez de llevarla dentro,
-   ¿sigue llegando al GPS nativo? Hay un fallo conocido por el que no
-   (ionic-team/capacitor#2373). El botón "Abrir la app web" lo comprueba: en la
-   web sale un distintivo abajo a la izquierda (`components/PuenteNativo.tsx`)
-   que dice si el puente funciona.
+Cómo se llegó aquí, porque explica por qué está montado así:
 
-De la respuesta a la 2 depende cuánto trabajo queda:
+1. Primero fue una app de prueba (`movil/prueba/`, que sigue ahí) para medir el
+   GPS en segundo plano. Respondió que sí: 10 min caminando dieron 0,82 km
+   contra 0,86 km del Garmin, y con la pantalla bloqueada todo el rato siguió
+   midiendo.
+2. Después se probó el atajo: que la cáscara cargara la web desde internet y le
+   prestara el GPS nativo. **No funciona.** Al abrir
+   `coachrun-delta.vercel.app` desde dentro de la cáscara, `window.Capacitor`
+   no existe (el distintivo de `components/PuenteNativo.tsx` sale naranja).
+   Android solo inyecta el puente en los archivos que viajan dentro del APK.
+   Es el fallo conocido ionic-team/capacitor#2373.
+3. Sin atajo, quedaban dos caminos: convertir la web para que viaje dentro del
+   APK (un solo código) o hacer una app nativa aparte (dos códigos que
+   mantener). Se eligió el primero.
 
-- **Si funciona:** casi nada. La app carga la web y le presta el GPS bueno.
-- **Si no funciona:** hay que decidir entre convertir la web para que viaje dentro
-  del APK (un solo código, sigue siendo web dentro de una caja) o hacer app nativa
-  aparte (mejor GPS, dos códigos que mantener).
+## Un solo código, dos compilaciones
+
+`next.config.js` mira la variable `APP_MOVIL`:
+
+- **Sin ella** (lo que hace Vercel): la web de siempre, pantallas + rutas de API.
+- **`APP_MOVIL=1`**: `output: 'export'`, solo las pantallas, como archivos
+  sueltos. Las rutas de API **no se pueden empaquetar** (necesitan un servidor
+  que las ejecute), así que se quedan en Vercel y la app las llama por internet.
+
+Eso obligó a tres cosas, que ya están hechas:
+
+- **Las 8 pantallas son de cliente.** Antes cada una hacía `requireUser()` en el
+  servidor; ahora usan `usePantalla()` de `lib/pantalla.ts`, que pide la sesión
+  y el perfil a `/api/perfil` y hace las consultas desde el navegador (RLS ya
+  las permite). Efecto secundario bueno: cambiar de pestaña es instantáneo, ya
+  no hay ida y vuelta al servidor.
+- **Las llamadas de API pasan todas por `pedir()` de `lib/api.ts`**, que les
+  pone delante la dirección de Vercel y adjunta la sesión en la cabecera
+  `Authorization: Bearer`. Dentro del APK no hay cookies del dominio de Vercel,
+  así que sin eso el servidor no sabría quién llama. **Nunca llamar a
+  `fetch('/api/...')` a pelo**: dentro del APK esa dirección no existe.
+- **El servidor acepta las dos formas.** `supabaseServer()` y `usuarioActual()`
+  de `lib/supabase-server.ts` leen la sesión de la cookie (web) o de la cabecera
+  (app). Las 12 rutas de API usan `usuarioActual()`.
+
+Para compilar la parte del móvil, desde la raíz del repositorio:
+
+```
+./scripts/compilar-movil.sh                      # apunta a coachrun-delta.vercel.app
+./scripts/compilar-movil.sh https://otro.sitio   # o a donde se quiera
+```
+
+El guion aparta un momento `app/api` y `app/auth/callback` (son de servidor y
+no se pueden exportar), compila, y las devuelve a su sitio pase lo que pase.
+Deja el resultado en `movil/www`, que **no se guarda en el repositorio**: se
+genera en cada compilación.
+
+## `lib/gps.ts`: el único sitio que decide GPS nativo o del navegador
+
+`enLaApp()` dice si estamos dentro del APK. `seguirPosicion()` arranca el
+vigilante nativo (con su servicio en primer plano) o `watchPosition` del
+navegador, y devuelve siempre la misma forma de punto. `lib/session.ts` no sabe
+cuál de los dos le está hablando: para él son posiciones y ya.
 
 ## `registerPlugin` no viene con Android (esto ya nos mordió)
 
@@ -33,9 +80,9 @@ pero al tocar Empezar salía:
 Android inyecta un `window.Capacitor` mínimo (sirve para saber la plataforma),
 pero **la función para cargar complementos la trae la librería
 `@capacitor/core` y hay que empaquetarla dentro de la página**. Por eso el guion
-vive en `src/app.js` y se empaqueta con esbuild (`npm run build`) antes de
-`cap sync`. Si alguna vez se vuelve a escribir JavaScript suelto en `www/`, el
-mismo fallo vuelve.
+vive en `src/app.js` y se empaqueta con esbuild (lo hace
+`scripts/compilar-movil.sh`) antes de `cap sync`. Si alguna vez se vuelve a
+escribir JavaScript suelto en `www/`, el mismo fallo vuelve.
 
 ## El complemento de segundo plano se calla si no hay permiso
 
@@ -99,17 +146,27 @@ Una prueba en un patio no vale. Hacen falta **100 m o más en línea recta**.
 
 ## El filtro de distancia está duplicado
 
-`www/index.html` lleva una copia en JavaScript de `medir()` de `lib/geo.ts`, porque
-esta página no pasa por el compilador del proyecto web. **Si allí se cambian el peso
+`movil/prueba/index.html` lleva una copia en JavaScript de `medir()` de
+`lib/geo.ts`, porque esa página de diagnóstico no pasa por el compilador del
+proyecto web (la app de verdad sí usa `lib/geo.ts`, así que esto solo afecta a
+la pantalla de pruebas). **Si allí se cambian el peso
 o el umbral, hay que cambiarlos aquí también**, o la prueba deja de medir lo mismo
 que la app.
 
 ## Cómo se compila
 
 No hace falta ningún computador con Android Studio. Lo hace GitHub en la nube:
-`.github/workflows/apk.yml`. Se lanza solo al tocar `movil/`, o a mano desde la
-pestaña **Actions** del repositorio. El APK queda en **Releases**, con enlace
-público, siempre en la misma entrega (`apk-prueba`) para que el enlace no cambie.
+`.github/workflows/apk.yml`. Se lanza solo al tocar `movil/`, `app/`,
+`components/` o `lib/`, o a mano desde la pestaña **Actions** del repositorio.
+El APK queda en **Releases**, con enlace público, siempre en la misma entrega
+(`apk-prueba`) para que el enlace no cambie.
+
+**Hacen falta dos claves guardadas en el repositorio** (GitHub → Settings →
+Secrets and variables → Actions): `NEXT_PUBLIC_SUPABASE_URL` y
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, con los mismos valores que ya están en Vercel.
+Quedan grabadas dentro del APK al compilar; no son secretas (ya viajan a
+cualquier navegador que abra la web), pero sin ellas la app se instala y no
+puede entrar. La compilación para y lo dice si faltan.
 
 Va firmado con la clave de pruebas de Android, así que **para instalar una versión
 nueva hay que desinstalar la anterior**. Cuando pasemos a la app de verdad habrá
@@ -119,9 +176,11 @@ perderla nunca: si se pierde, las actualizaciones dejan de instalarse encima.
 ## Si hace falta tocarlo a mano
 
 ```
+npm install                        # en la raíz, para la web
+./scripts/compilar-movil.sh        # deja las pantallas en movil/www
 cd movil
 npm install
-npx cap sync android          # copia www/ y los complementos al proyecto Android
+npx cap sync android               # copia www/ y los complementos al proyecto Android
 cd android && ./gradlew assembleDebug
 ```
 

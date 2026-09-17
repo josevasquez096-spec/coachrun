@@ -14,6 +14,7 @@
 import { cerrar, filtroNuevo, medir, type Filtro, type Point } from './geo';
 import { dictarCantidad, dictarObjetivo, dictarRitmo, type Phase, type Step } from './phases';
 import { repartir as repartirPuro } from './reparto';
+import { seguirPosicion, enLaApp, type Parar } from './gps';
 import { fmtTime } from './format';
 import { initAudio, despertarAudio, callar, beep, doubleBeep, phaseBeep, speak } from './audio';
 import { conectarPulso, type HrHandle } from './ble';
@@ -56,7 +57,7 @@ let vista: Sesion = s;                       // copia que lee React
 const oyentes = new Set<() => void>();
 
 // Lo que no se dibuja se queda aquí fuera.
-let watchId: number | null = null;
+let pararGps: Parar | null = null;
 let timerId: any = null;
 let lock: any = null;
 let filtro: Filtro = filtroNuevo();
@@ -133,10 +134,9 @@ function tick() {
   emitir();
 }
 
-function onPos(pos: GeolocationPosition) {
-  const c = pos.coords;
-  s.gpsAcc = Math.round(c.accuracy);
-  const p: Point = { lat: c.latitude, lng: c.longitude, t: pos.timestamp, alt: c.altitude ?? undefined, acc: c.accuracy };
+function onPos(pos: { lat: number; lng: number; t: number; acc: number; alt?: number }) {
+  s.gpsAcc = Math.round(pos.acc);
+  const p: Point = { lat: pos.lat, lng: pos.lng, t: pos.t, alt: pos.alt, acc: pos.acc };
 
   const { avance, punto } = medir(filtro, p);
   if (!punto) { emitir(); return; }              // punto descartado por el filtro
@@ -179,16 +179,17 @@ function pedirLock() {
 }
 
 function engancharGps() {
-  if (watchId != null) return;
-  watchId = navigator.geolocation.watchPosition(onPos,
-    (e) => { s.msg = e.code === 1 ? 'Permite el acceso a la ubicación en los ajustes del navegador.' : 'Buscando señal GPS…'; emitir(); },
-    { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+  if (pararGps) return;
+  pararGps = () => {};          // marca de "ya pedido", para no arrancar dos veces
+  seguirPosicion(onPos, (mensaje) => { s.msg = mensaje; emitir(); })
+    .then((parar) => { if (pararGps) pararGps = parar; else parar(); })
+    .catch((e) => { s.msg = 'No se pudo arrancar el GPS: ' + (e?.message ?? e); pararGps = null; emitir(); });
   timerId = setInterval(tick, 1000);
-  pedirLock();
+  if (!enLaApp()) pedirLock();  // dentro del APK manda el servicio de Android
 }
 
 function soltarGps() {
-  if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  if (pararGps) { try { pararGps(); } catch {} pararGps = null; }
   if (timerId) { clearInterval(timerId); timerId = null; }
   lock?.release?.(); lock = null;
   // El filtro empieza de cero: entre la pausa y la vuelta puede haber movimiento
