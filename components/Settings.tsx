@@ -5,6 +5,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import PushToggle from './PushToggle';
 import AvatarUpload from './AvatarUpload';
 import { zonas } from '@/lib/zones';
+import { pedir } from '@/lib/api';
 
 export default function Settings({ me, email }: { me: { id: string; full_name: string | null; role: string; strava_athlete_id: number | null; coach_id: string | null; avatar_url?: string | null; max_hr?: number | null; resting_hr?: number | null }; email?: string }) {
   const r = useRouter();
@@ -26,7 +27,7 @@ export default function Settings({ me, email }: { me: { id: string; full_name: s
 
   async function save() {
     setMsg('Guardando…');
-    const res = await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: code.trim() }) });
+    const res = await pedir('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: code.trim() }) });
     const j = await res.json().catch(() => ({}));
     setMsg(res.ok ? 'Guardado.' : (j.error ?? 'No se pudo guardar.'));
     r.refresh();
@@ -38,7 +39,7 @@ export default function Settings({ me, email }: { me: { id: string; full_name: s
   async function disconnectStrava() {
     if (!confirm('¿Desconectar Strava? Dejarán de llegar tus carreras automáticamente. Las que ya están guardadas se quedan.')) return;
     setSmsg('Desconectando…');
-    const res = await fetch('/api/strava/disconnect', { method: 'POST' });
+    const res = await pedir('/api/strava/disconnect', { method: 'POST' });
     setSmsg(res.ok ? 'Strava desconectado.' : 'No se pudo desconectar.'); r.refresh();
   }
   async function out() { await supabaseBrowser().auth.signOut(); location.href = '/'; }

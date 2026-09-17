@@ -5,6 +5,7 @@ import { TYPE_LABEL, todayLocal } from '@/lib/format';
 import { expand, describe, type Phase } from '@/lib/phases';
 import WorkoutForm from './WorkoutForm';
 import * as portapapeles from '@/lib/portapapeles';
+import { pedir } from '@/lib/api';
 
 type W = {
   id: string; date: string; type: string; title: string; description: string | null;
@@ -34,7 +35,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
     if (!confirm('¿Borrar este entrenamiento?')) return;
     setErr('');
     try {
-      const res = await fetch(`/api/workouts/${id}`, { method: 'DELETE' });
+      const res = await pedir(`/api/workouts/${id}`, { method: 'DELETE' });
       const txt = await res.text();
       if (!res.ok) {
         let motivo = txt.slice(0, 140);
@@ -59,7 +60,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
     setTimeout(() => setCopiadoId((x) => (x === w.id ? null : x)), 2500);
   }
   async function toggle(w: W) {
-    await fetch(`/api/workouts/${w.id}/hecho`, { method: 'POST', body: JSON.stringify({ completed: !w.completed }) });
+    await pedir(`/api/workouts/${w.id}/hecho`, { method: 'POST', body: JSON.stringify({ completed: !w.completed }) });
     r.refresh();
   }
 

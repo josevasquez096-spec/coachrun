@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { pedir } from '@/lib/api';
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -30,7 +31,7 @@ export default function PushToggle() {
     if (!key) return setMsg('Falta configurar la llave de notificaciones en el servidor.');
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
-    const r = await fetch('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+    const r = await pedir('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
     if (r.ok) { setState('on'); setMsg('Listo. Te avisaremos cuando tu entrenador cambie algo.'); }
     else setMsg('No se pudo guardar la suscripción.');
   }
@@ -39,7 +40,7 @@ export default function PushToggle() {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-      await fetch('/api/push/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint: sub.endpoint }) });
+      await pedir('/api/push/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint: sub.endpoint }) });
       await sub.unsubscribe();
     }
     setState('off'); setMsg('');

@@ -17,6 +17,7 @@ import { repartir as repartirPuro } from './reparto';
 import { fmtTime } from './format';
 import { initAudio, despertarAudio, callar, beep, doubleBeep, phaseBeep, speak } from './audio';
 import { conectarPulso, type HrHandle } from './ble';
+import { pedir } from './api';
 
 export type EstadoRec = 'idle' | 'running' | 'paused' | 'done' | 'saving' | 'saved';
 
@@ -296,7 +297,7 @@ export async function guardar(hasStrava: boolean) {
   s.estado = 'saving'; emitir();
   const media = hrSum.n ? Math.round(hrSum.suma / hrSum.n) : null;
   try {
-    const r = await fetch('/api/strava/upload', { method: 'POST', body: JSON.stringify({
+    const r = await pedir('/api/strava/upload', { method: 'POST', body: JSON.stringify({
       points: s.pts, name: s.titulo, workoutId: s.workoutId ?? undefined, movingTime: s.elapsed,
       distanceM: Math.round(s.dist),
       subirStrava: hasStrava && s.subirStrava, rpe: s.rpe, notas: s.notas || null, avgHr: media,

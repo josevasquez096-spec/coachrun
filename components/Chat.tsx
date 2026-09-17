@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as avisos from '@/lib/avisos';
+import { pedir } from '@/lib/api';
 
 export type Msg = { id: string; sender_id: string; body: string; created_at: string };
 
@@ -13,7 +14,7 @@ export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string
 
   async function cargar(scroll = false) {
     try {
-      const r = await fetch(`/api/messages?athleteId=${hilo.athleteId}&coachId=${hilo.coachId}`);
+      const r = await pedir(`/api/messages?athleteId=${hilo.athleteId}&coachId=${hilo.coachId}`);
       const j = await r.json();
       if (r.ok) setMsgs(j.messages ?? []);
       // Al leer el hilo se marcan como leídos: hay que bajar el globo rojo de la barra.
@@ -36,7 +37,7 @@ export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string
     const provisional: Msg = { id: `tmp-${Date.now()}`, sender_id: yo, body, created_at: new Date().toISOString() };
     setMsgs((m) => [...m, provisional]);
     setTimeout(() => fin.current?.scrollIntoView({ behavior: 'smooth' }), 40);
-    const r = await fetch('/api/messages', { method: 'POST', body: JSON.stringify({ ...hilo, body }) });
+    const r = await pedir('/api/messages', { method: 'POST', body: JSON.stringify({ ...hilo, body }) });
     if (!r.ok) { setErr('No se pudo enviar. Inténtalo de nuevo.'); setMsgs((m) => m.filter((x) => x.id !== provisional.id)); setTexto(body); }
     else cargar(true);
   }

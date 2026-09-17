@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 
 /** El atleta marca su propio entrenamiento; el coach también puede. */
 export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
   const { completed } = await req.json();
   const db = supabaseAdmin();

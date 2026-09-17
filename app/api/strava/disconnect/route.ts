@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { accessTokenFor } from '@/lib/strava';
 
 export async function POST() {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({}, { status: 401 });
   // Avisamos a Strava para que revoque el permiso desde su lado
   try {

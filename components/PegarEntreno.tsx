@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { todayLocal } from '@/lib/format';
 import { describe } from '@/lib/phases';
 import * as portapapeles from '@/lib/portapapeles';
+import { pedir } from '@/lib/api';
 
 /** El aviso de "tienes un entrenamiento copiado" con el botón para pegarlo aquí. */
 export default function PegarEntreno({ athleteId, nombre }: { athleteId: string; nombre: string }) {
@@ -20,7 +21,7 @@ export default function PegarEntreno({ athleteId, nombre }: { athleteId: string;
   async function pegar() {
     setEstado('pegando'); setErr('');
     try {
-      const res = await fetch('/api/workouts/copiar', {
+      const res = await pedir('/api/workouts/copiar', {
         method: 'POST',
         body: JSON.stringify({ athleteId, date: cuando, workout: c }),
       });

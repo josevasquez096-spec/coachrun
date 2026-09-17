@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { cleanCode } from '@/lib/guard';
 
 export async function POST(req: Request) {
   const sb = supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ error: 'Tu sesión caducó. Entra de nuevo.' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));

@@ -5,6 +5,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { TYPE_LABEL, todayLocal } from '@/lib/format';
 import PhaseBuilder from './PhaseBuilder';
 import { type Phase, totalMeters, totalSeconds } from '@/lib/phases';
+import { pedir } from '@/lib/api';
 
 type Existing = {
   id: string; date: string; type: string; title: string; description: string | null;
@@ -42,7 +43,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
     const reloj = setTimeout(() => corta.abort(), 15000);
     try {
       if (existing) {
-        const res = await fetch(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()), signal: corta.signal });
+        const res = await pedir(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()), signal: corta.signal });
         const j = await res.json().catch(() => ({}));
         if (!res.ok) { setErr(j.error ?? 'No se pudo guardar.'); return; }
         onDone?.(); r.refresh();
@@ -53,7 +54,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
       const { error } = await sb.from('workouts').insert({ coach_id: user.id, athlete_id: athleteId, ...payload() });
       if (error) { setErr(error.message); return; }
       const fecha = new Date(f.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
-      fetch('/api/push/notify', { method: 'POST', body: JSON.stringify({
+      pedir('/api/push/notify', { method: 'POST', body: JSON.stringify({
         athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
       }) }).catch(() => {});
       setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]);

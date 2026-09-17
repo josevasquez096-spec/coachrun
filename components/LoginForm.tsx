@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import Footer from './Footer';
+import { pedir } from '@/lib/api';
 
 type Mode = 'signin' | 'signup' | 'magic';
 
@@ -28,7 +29,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }
         const { data } = await sb.auth.getSession();
         if (data.session) {
           if (coach) {
-            const link = await fetch('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: coach.trim() }) });
+            const link = await pedir('/api/coach/link', { method: 'POST', body: JSON.stringify({ full_name: name, coach_code: coach.trim() }) });
             if (!link.ok) { /* el guard lo reintenta al entrar, no bloqueamos el registro */ }
           }
           location.href = '/';

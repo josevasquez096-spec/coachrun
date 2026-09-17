@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase-server';
+import { supabaseServer, usuarioActual } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   const sb = supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ total: 0, por: {} });
 
   // RLS ya limita a los hilos en los que participo; aquí solo pido los que no he leído.

@@ -6,6 +6,8 @@
  * el número ya esté ahí y no parpadee: la barra vuelve a montarse en cada
  * pantalla, pero estos datos no se pierden.
  */
+import { pedir } from './api';
+
 export type Avisos = { total: number; por: Record<string, number> };
 
 const VACIO: Avisos = { total: 0, por: {} };
@@ -23,7 +25,7 @@ export async function refrescar(forzar = false) {
   if (!forzar && Date.now() - ultima < 10000) return;
   pidiendo = true;
   try {
-    const r = await fetch('/api/messages/unread', { cache: 'no-store' });
+    const r = await pedir('/api/messages/unread', { cache: 'no-store' });
     if (r.ok) {
       const j: Avisos = await r.json();
       // Solo avisamos si algo cambió de verdad, para no redibujar sin motivo.

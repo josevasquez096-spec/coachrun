@@ -1,10 +1,10 @@
-import { supabaseServer } from '@/lib/supabase-server';
+import { supabaseServer, usuarioActual } from '@/lib/supabase-server';
 import { buildWorkoutFit, type FitStep } from '@/lib/fit';
 import { expand, type Phase } from '@/lib/phases';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const sb = supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
+  const user = await usuarioActual();
   if (!user) return new Response('No autorizado', { status: 401 });
 
   const { data: w } = await sb.from('workouts').select('title,phases').eq('id', params.id).single();
