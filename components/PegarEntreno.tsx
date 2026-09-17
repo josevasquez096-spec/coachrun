@@ -5,6 +5,7 @@ import { todayLocal } from '@/lib/format';
 import { describe } from '@/lib/phases';
 import * as portapapeles from '@/lib/portapapeles';
 import { pedir } from '@/lib/api';
+import { refrescar } from '@/lib/pantalla';
 
 /** El aviso de "tienes un entrenamiento copiado" con el botón para pegarlo aquí. */
 export default function PegarEntreno({ athleteId, nombre }: { athleteId: string; nombre: string }) {
@@ -28,7 +29,7 @@ export default function PegarEntreno({ athleteId, nombre }: { athleteId: string;
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setErr(j.error ?? 'No se pudo pegar.'); setEstado('listo'); return; }
       setEstado('hecho');
-      r.refresh();
+      refrescar();
     } catch {
       setErr('No se pudo pegar. Revisa la conexión.'); setEstado('listo');
     }

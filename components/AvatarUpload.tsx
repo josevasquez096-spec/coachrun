@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import Avatar from './Avatar';
+import { refrescar } from '@/lib/pantalla';
 
 /** Recorta al centro y reduce a 512 px para que la subida sea liviana. */
 async function reducir(file: File): Promise<Blob> {
@@ -37,7 +38,7 @@ export default function AvatarUpload({ userId, url, name }: { userId: string; ur
       const { error: e2 } = await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
       if (e2) throw e2;
       setMsg('Foto actualizada.');
-      r.refresh();
+      refrescar();
     } catch (e: any) {
       setMsg(e?.message ?? 'No se pudo subir la foto.');
       setPreview(null);

@@ -1,24 +1,52 @@
-import { redirect } from 'next/navigation';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { pedir } from '@/lib/api';
 import LoginForm from '@/components/LoginForm';
+import Esqueleto from '@/components/Esqueleto';
 
-export const dynamic = 'force-dynamic';
+export default function Home() {
+  const r = useRouter();
+  const q = useSearchParams();
+  const coach = q.get('coach');
+  const entrar = q.get('entrar');
+  const [listo, setListo] = useState(false);
+  const [nombreCoach, setNombreCoach] = useState<string | null>(null);
+  const [sesionRota, setSesionRota] = useState(false);
 
-export default async function Home({ searchParams }: { searchParams: { coach?: string; entrar?: string } }) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      // Si venimos rebotados de una pantalla protegida (entrar=1) NO se redirige,
+      // aunque haya sesión: así nunca se forma un bucle de idas y venidas.
+      if (!entrar) {
+        try {
+          const res = await pedir('/api/perfil');
+          if (res.ok) {
+            const { profile } = await res.json();
+            if (profile) { r.replace(profile.role === 'coach' ? '/coach' : '/athlete'); return; }
+          }
+        } catch { /* sin conexión: se enseña el login igual */ }
+      } else {
+        try { const res = await pedir('/api/perfil'); if (vivo) setSesionRota(res.ok); } catch {}
+      }
+      if (coach) {
+        try {
+          const res = await pedir('/api/coach/nombre?id=' + encodeURIComponent(coach));
+          if (res.ok && vivo) setNombreCoach((await res.json()).nombre);
+        } catch {}
+      }
+      if (vivo) setListo(true);
+    })();
+    return () => { vivo = false; };
+  }, [coach, entrar, r]);
 
-  // Solo redirigimos si hay sesión Y perfil confirmado. Si venimos rebotados
-  // desde una página protegida (entrar=1), mostramos el login sin redirigir:
-  // así nunca se forma un bucle.
-  if (user && !searchParams.entrar) {
-    const { data: p } = await supabaseServer().from('profiles').select('role').eq('id', user.id).maybeSingle();
-    if (p) redirect(p.role === 'coach' ? '/coach' : '/athlete');
-  }
-
-  let coachName: string | null = null;
-  if (searchParams.coach) {
-    const { data } = await supabaseAdmin().from('profiles').select('full_name').eq('id', searchParams.coach).eq('role', 'coach').maybeSingle();
-    coachName = data?.full_name ?? null;
-  }
-  return <LoginForm inviteCoachId={coachName ? searchParams.coach! : undefined} inviteCoachName={coachName ?? undefined} sesionRota={!!(user && searchParams.entrar)} />;
+  if (!listo) return <main className="shell"><Esqueleto /></main>;
+  return (
+    <LoginForm
+      inviteCoachId={nombreCoach ? coach! : undefined}
+      inviteCoachName={nombreCoach ?? undefined}
+      sesionRota={sesionRota}
+    />
+  );
 }

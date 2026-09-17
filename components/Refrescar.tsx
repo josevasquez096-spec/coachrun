@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { refrescar } from '@/lib/pantalla';
 
 /** Tirar hacia abajo para actualizar, más un botón por si el gesto no funciona. */
 export default function Refrescar() {
@@ -12,7 +13,7 @@ export default function Refrescar() {
 
   async function refrescar() {
     setCargando(true);
-    r.refresh();
+    refrescar();
     setTimeout(() => { setCargando(false); setTiro(0); }, 900);
   }
 

@@ -1,20 +1,21 @@
-import { requireUser } from '@/lib/guard';
+'use client';
+import { usePantalla, papel } from '@/lib/pantalla';
 import TabBar from '@/components/TabBar';
 import Refrescar from '@/components/Refrescar';
 import Footer from '@/components/Footer';
 import Settings from '@/components/Settings';
+import Esqueleto from '@/components/Esqueleto';
 
-export const dynamic = 'force-dynamic';
-
-export default async function SettingsPage() {
-  const { user, profile } = await requireUser();
+export default function SettingsPage() {
+  const { sesion, perfil, cargando, error } = usePantalla();
   return (
     <main className="shell">
       <Refrescar />
       <h1>Cuenta</h1>
-      <Settings me={profile!} email={user.email} />
+      {error && <p className="notice">{error}</p>}
+      {cargando || !perfil ? <Esqueleto /> : <Settings me={perfil as any} email={sesion?.user.email ?? undefined} />}
       <Footer />
-      <TabBar role={(profile?.role as 'coach' | 'athlete') ?? 'athlete'} />
+      <TabBar role={papel(sesion)} />
     </main>
   );
 }

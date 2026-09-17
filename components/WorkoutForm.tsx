@@ -6,6 +6,7 @@ import { TYPE_LABEL, todayLocal } from '@/lib/format';
 import PhaseBuilder from './PhaseBuilder';
 import { type Phase, totalMeters, totalSeconds } from '@/lib/phases';
 import { pedir } from '@/lib/api';
+import { refrescar } from '@/lib/pantalla';
 
 type Existing = {
   id: string; date: string; type: string; title: string; description: string | null;
@@ -46,7 +47,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
         const res = await pedir(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()), signal: corta.signal });
         const j = await res.json().catch(() => ({}));
         if (!res.ok) { setErr(j.error ?? 'No se pudo guardar.'); return; }
-        onDone?.(); r.refresh();
+        onDone?.(); refrescar();
         return;
       }
       const sb = supabaseBrowser(); const { data: { user } } = await sb.auth.getUser();
@@ -58,7 +59,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
         athleteId, title: 'Entrenamiento nuevo', body: `${f.title || TYPE_LABEL[f.type]} — ${fecha}`,
       }) }).catch(() => {});
       setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]);
-      onDone?.(); r.refresh();
+      onDone?.(); refrescar();
     } catch (e: any) {
       setErr(e?.name === 'AbortError' ? 'El servidor tardó demasiado. Revisa la conexión e inténtalo otra vez.' : (e?.message ?? 'No se pudo guardar.'));
     } finally {

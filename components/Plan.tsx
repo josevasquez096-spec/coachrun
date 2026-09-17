@@ -6,6 +6,7 @@ import { expand, describe, type Phase } from '@/lib/phases';
 import WorkoutForm from './WorkoutForm';
 import * as portapapeles from '@/lib/portapapeles';
 import { pedir } from '@/lib/api';
+import { refrescar } from '@/lib/pantalla';
 
 type W = {
   id: string; date: string; type: string; title: string; description: string | null;
@@ -44,7 +45,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
         setErr(detalle); alert(detalle);
         return;
       }
-      r.refresh();
+      refrescar();
     } catch (e: any) {
       const detalle = `No se pudo borrar: ${e?.message ?? 'error de red'}`;
       setErr(detalle); alert(detalle);
@@ -61,7 +62,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
   }
   async function toggle(w: W) {
     await pedir(`/api/workouts/${w.id}/hecho`, { method: 'POST', body: JSON.stringify({ completed: !w.completed }) });
-    r.refresh();
+    refrescar();
   }
 
   if (!workouts.length) return <p className="card muted">Todavía no hay entrenamientos en el plan.</p>;
