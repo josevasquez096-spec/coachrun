@@ -56,7 +56,9 @@ dónde, no solo el nombre del error.
 - PWA: `public/manifest.json` + `public/sw.js` (caché, push, click en notificación)
 - **No hay middleware.** Se quitó a propósito: `@supabase/ssr` fallaba al cargarse
   en el runtime Edge y tumbaba la app con MIDDLEWARE_INVOCATION_FAILED. La sesión
-  se comprueba en cada página con `requireUser()` de `lib/guard.ts`.
+  la comprueba cada pantalla con `usePantalla()` (que llama a `/api/perfil`), y
+  cada ruta de API con `usuarioActual()`. `requireUser()` de `lib/guard.ts` sigue
+  existiendo para el lado servidor; `perfilDe()` es la parte reutilizable.
 
 ## Variables de entorno (Vercel)
 NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
