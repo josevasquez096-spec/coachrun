@@ -225,17 +225,29 @@ Medido en un Samsung real (no simulado), con la app en primer plano:
   Es justo lo que el navegador NO puede hacer, y el único motivo de peso para
   empaquetar la app. El servicio en primer plano de Android aguanta.
 
-Queda una pregunta abierta, y decide cuánto trabajo falta: **si el puente nativo
-llega a la web cargada desde internet**. La cáscara inyecta `window.Capacitor`
-en la página local (probado), pero no se ha comprobado en la remota. El botón
-"Abrir la app web" lo mide con `components/PuenteNativo.tsx`:
+**El puente nativo NO llega a la web remota.** Probado: al abrir
+`coachrun-delta.vercel.app` desde dentro de la cáscara, el distintivo sale
+naranja ("SIN puente nativo"): `window.Capacitor` no existe en esa página.
+Android solo inyecta el puente en los archivos que viajan dentro del APK.
 
-- **Verde** → la web actual puede usar el GPS nativo tal cual. Bastaría con
-  empaquetar `@capacitor/core` en el proyecto web y hacer que `lib/session.ts`
-  use el complemento cuando corra dentro de la app. Camino corto.
-- **Naranja** → hay que llevar la web dentro del APK (convertirla a una sola
-  página, un solo código) o hacer app nativa aparte (dos códigos). Camino largo,
-  y esa decisión se toma entonces.
+Conclusión: **no hay atajo**. Para que la app use el GPS nativo, la web tiene
+que ir dentro del APK. Lo que eso implica, medido:
+
+- Las 7 páginas son cascarones finos (26-66 líneas cada una, ~250 en total):
+  hacen `requireUser()` y un par de consultas, y se lo pasan todo a los
+  componentes. Habría que pasar esas consultas al navegador; RLS ya las permite.
+- Los **1.757 líneas de componentes y las 510 de lógica pura no se tocan**: ya
+  son de cliente.
+- Las 12 rutas de API que usan la sesión por cookie se arreglan en **un solo
+  sitio**: que `supabaseServer()` acepte también `Authorization: Bearer`.
+- Harían falta dos compilaciones del mismo código: la de Vercel como ahora, y
+  una estática (`output: 'export'`) para meter en el APK, apuntando las llamadas
+  de API a la dirección absoluta de Vercel.
+- Y que `lib/session.ts` use el complemento de GPS nativo cuando corra dentro
+  de la app, en vez de `navigator.geolocation`.
+
+Efecto secundario bueno: la web se convierte en una sola página, así que cambiar
+de pestaña pasa a ser instantáneo (ya no hay ida y vuelta al servidor por tab).
 
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
