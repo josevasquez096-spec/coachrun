@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseBrowser } from './supabase-browser';
-import { pedir } from './api';
+import { pedir, motivoDeFallo } from './api';
 
 export type Perfil = {
   id: string; full_name: string | null; role: string; coach_id: string | null;
@@ -62,7 +62,7 @@ export function usePantalla<T>(
       if (cargar) setDatos(await cargar(supabaseBrowser(), s!));
       setError('');
     } catch (e: any) {
-      setError(e?.message ?? 'No se pudieron cargar los datos. Revisa la conexión.');
+      setError(motivoDeFallo(e));
     } finally {
       setCargando(false);
     }

@@ -34,3 +34,21 @@ export async function pedir(ruta: string, opciones: RequestInit = {}) {
   }
   return fetch(BASE + ruta, { ...opciones, headers: cab });
 }
+
+/**
+ * Traduce un fallo de red a algo que se pueda leer.
+ *
+ * Cuando el navegador corta una llamada (sin conexión, o el servidor no acepta
+ * llamadas desde la app) el error que llega es un seco «Failed to fetch», en
+ * inglés y sin decir nada. Sin esto el usuario solo ve una pantalla que no hace
+ * nada, que es justo lo que no queremos.
+ */
+export function motivoDeFallo(e: any): string {
+  const m = String(e?.message ?? e ?? '');
+  if (/failed to fetch|load failed|networkerror|network request failed/i.test(m)) {
+    return BASE
+      ? 'No se pudo hablar con el servidor (' + BASE + '). Comprueba que el teléfono tiene internet.'
+      : 'No se pudo hablar con el servidor. Comprueba tu conexión.';
+  }
+  return m || 'Algo falló y no dijo por qué.';
+}

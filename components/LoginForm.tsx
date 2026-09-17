@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import Footer from './Footer';
-import { pedir } from '@/lib/api';
+import { pedir, motivoDeFallo } from '@/lib/api';
 
 type Mode = 'signin' | 'signup' | 'magic';
 
-export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }: { inviteCoachId?: string; inviteCoachName?: string; sesionRota?: boolean }) {
+export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, fallo }: { inviteCoachId?: string; inviteCoachName?: string; sesionRota?: boolean; fallo?: string }) {
   const [mode, setMode] = useState<Mode>(inviteCoachId ? 'signup' : 'signin');
   const [email, setEmail] = useState(''); const [pass, setPass] = useState('');
   const [name, setName] = useState(''); const [coach, setCoach] = useState(inviteCoachId ?? '');
@@ -45,7 +45,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }
       setErr(e?.message === 'Invalid login credentials' ? 'Correo o contraseña incorrectos.'
         : e?.message?.includes('rate limit') ? 'Demasiados correos seguidos. Espera un rato o entra con contraseña.'
         : e?.message === 'User already registered' ? 'Ya existe una cuenta con ese correo. Entra desde la pestaña «Entrar».'
-        : e?.message ?? 'Algo falló.');
+        : motivoDeFallo(e));
     }
     setBusy(false);
   }
@@ -60,6 +60,12 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota }
     <main className="shell" style={{ paddingTop: 48 }}>
       <div className="brand" style={{ fontSize: 34 }}>MyCoach<span>Runs</span></div>
       <p className="muted" style={{ marginTop: 4 }}>Tu entrenador te pone el plan. Tú sales a correr.</p>
+
+      {fallo && (
+        <div className="notice" style={{ marginTop: 20, fontSize: 14 }}>
+          <b>No se pudo comprobar tu sesión.</b><br />{fallo}
+        </div>
+      )}
 
       {sesionRota && (
         <div className="notice" style={{ marginTop: 20, fontSize: 14 }}>
