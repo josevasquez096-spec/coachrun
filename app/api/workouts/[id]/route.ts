@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { notifyUser } from '@/lib/push';
 
 async function owner(id: string) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return { error: 'No autorizado', status: 401 as const };
   const db = supabaseAdmin();
   const { data: w } = await db.from('workouts').select('id,coach_id,athlete_id,title').eq('id', id).maybeSingle();

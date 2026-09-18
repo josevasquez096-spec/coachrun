@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { toGpx, uploadGpx } from '@/lib/strava';
 import { distanciaTotal, type Point } from '@/lib/geo';
 
 export async function POST(req: Request) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
 
   const { points, name, workoutId, movingTime, subirStrava, rpe, notas, avgHr, distanceM } =

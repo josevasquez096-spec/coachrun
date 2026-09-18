@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { notifyUser } from '@/lib/push';
 
 /** Solo el coach del atleta puede avisarle. */
 export async function POST(req: Request) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({}, { status: 401 });
   const { athleteId, title, body } = await req.json();
 

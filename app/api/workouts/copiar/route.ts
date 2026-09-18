@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { notifyUser } from '@/lib/push';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
@@ -13,7 +13,7 @@ const TIPOS = ['easy', 'long', 'tempo', 'intervals', 'race', 'rest', 'strength']
  * entrenamiento lleve tu firma, no a quién se lo asignas.
  */
 export async function POST(req: Request) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
 
   const { athleteId, date, workout } = await req.json();

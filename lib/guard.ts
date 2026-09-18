@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { supabaseServer, supabaseAdmin } from './supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from './supabase-server';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const cleanCode = (s?: string | null) => {
@@ -7,21 +7,22 @@ export const cleanCode = (s?: string | null) => {
   return UUID.test(t) ? t : null;
 };
 
-/**
- * Exige sesión y devuelve usuario + perfil.
- * Crea el perfil si falta y aplica el código de entrenador pendiente, venga
- * del enlace de invitación o del registro.
- */
-export async function requireUser() {
-  const sb = supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) redirect('/?entrar=1');
+const CAMPOS = 'id,full_name,role,coach_id,strava_athlete_id,avatar_url,max_hr,resting_hr';
 
+/**
+ * El perfil de un usuario, creándolo si falta y aplicando el código de
+ * entrenador pendiente (del enlace de invitación o del registro).
+ *
+ * Va aparte de `requireUser()` porque lo necesitan dos sitios: las páginas del
+ * servidor, y la ruta `/api/perfil` que usa la app de Android, donde no se
+ * puede redirigir a ninguna parte: hay que devolver JSON.
+ */
+export async function perfilDe(user: { id: string; email?: string | null; user_metadata?: any }) {
+  const sb = supabaseServer();
   const admin = supabaseAdmin();
   const meta: any = user.user_metadata ?? {};
 
-  let { data: profile } = await sb.from('profiles')
-    .select('id,full_name,role,coach_id,strava_athlete_id,avatar_url,max_hr,resting_hr').eq('id', user.id).maybeSingle();
+  let { data: profile } = await sb.from('profiles').select(CAMPOS).eq('id', user.id).maybeSingle();
 
   if (!profile) {
     await admin.from('profiles').upsert({
@@ -29,7 +30,7 @@ export async function requireUser() {
       full_name: meta.full_name ?? user.email?.split('@')[0] ?? null,
       role: 'athlete',
     }, { onConflict: 'id' });
-    const again = await admin.from('profiles').select('id,full_name,role,coach_id,strava_athlete_id,avatar_url,max_hr,resting_hr').eq('id', user.id).maybeSingle();
+    const again = await admin.from('profiles').select(CAMPOS).eq('id', user.id).maybeSingle();
     profile = again.data;
   }
 
@@ -44,5 +45,16 @@ export async function requireUser() {
     }
   }
 
-  return { sb, user, profile };
+  return profile;
+}
+
+/**
+ * Exige sesión y devuelve usuario + perfil. Para las páginas que se dibujan en
+ * el servidor. Si no hay sesión, manda a la pantalla de entrar.
+ */
+export async function requireUser() {
+  const user = await usuarioActual();
+  if (!user) redirect('/?entrar=1');
+  const profile = await perfilDe(user);
+  return { sb: supabaseServer(), user, profile };
 }

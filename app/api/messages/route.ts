@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer, supabaseAdmin } from '@/lib/supabase-server';
+import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-server';
 import { notifyUser } from '@/lib/push';
 
 /** Comprueba que quien pide forma parte del hilo. */
@@ -10,7 +10,7 @@ async function permitido(userId: string, coachId: string, athleteId: string) {
 }
 
 export async function GET(req: Request) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
   const u = new URL(req.url);
   const coachId = u.searchParams.get('coachId') ?? '';
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { data: { user } } = await supabaseServer().auth.getUser();
+  const user = await usuarioActual();
   if (!user) return NextResponse.json({ error: 'Sesión caducada' }, { status: 401 });
   const { coachId, athleteId, body } = await req.json();
   if (!body?.trim()) return NextResponse.json({ error: 'Mensaje vacío' }, { status: 400 });
