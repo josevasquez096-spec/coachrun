@@ -13,7 +13,7 @@ export default function SettingsPage() {
       <Refrescar />
       <h1>Cuenta</h1>
       {error && <p className="notice">{error}</p>}
-      {cargando || !perfil ? <Esqueleto /> : <Settings me={perfil as any} email={sesion?.user.email ?? undefined} />}
+      {cargando ? <Esqueleto /> : perfil ? <Settings me={perfil as any} email={sesion?.user.email ?? undefined} /> : null}
       <Footer />
       <TabBar role={papel(sesion)} />
     </main>

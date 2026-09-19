@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { usePantalla } from '@/lib/pantalla';
+import { usePantalla, pedirDatos } from '@/lib/pantalla';
 import TabBar from '@/components/TabBar';
 import Footer from '@/components/Footer';
 import InviteLink from '@/components/InviteLink';
@@ -14,8 +14,8 @@ import Esqueleto from '@/components/Esqueleto';
 export default function Coach() {
   const r = useRouter();
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
-    const { data } = await sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id')
-      .eq('coach_id', s.user.id).order('full_name');
+    const data = pedirDatos(await sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id')
+      .eq('coach_id', s.user.id).order('full_name'));
     return data ?? [];
   });
 
@@ -28,7 +28,7 @@ export default function Coach() {
       <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{perfil?.full_name}</span></div>
       <h1>Alumnos</h1>
       {error && <p className="notice">{error}</p>}
-      {cargando || !datos || !sesion ? <Esqueleto /> : (
+      {cargando ? <Esqueleto /> : !datos || !sesion ? null : (
         <>
           <InviteLink coachId={sesion.user.id} />
           <AvisoCopiado />

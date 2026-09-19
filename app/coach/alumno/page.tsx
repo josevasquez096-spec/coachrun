@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
-import { usePantalla } from '@/lib/pantalla';
+import { usePantalla, pedirDatos } from '@/lib/pantalla';
 import { aligerar } from '@/lib/actividad';
 import WorkoutForm from '@/components/WorkoutForm';
 import PegarEntreno from '@/components/PegarEntreno';
@@ -30,16 +30,19 @@ export default function Alumno() {
 
   const { perfil, datos, cargando, error } = usePantalla(async (sb) => {
     // Solo se pide la lista de la pestaña que se mira, y las dos consultas a la vez.
-    const [{ data: a }, listas] = await Promise.all([
+    const [rAlumno, rLista] = await Promise.all([
       sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id').eq('id', id).maybeSingle(),
       ver === 'plan'
         ? sb.from('workouts').select('*').eq('athlete_id', id).order('date')
         : sb.from('activities').select('*').eq('athlete_id', id).order('started_at', { ascending: false }).limit(60),
     ]);
+    if (rAlumno.error) throw new Error(rAlumno.error.message);
+    const a = rAlumno.data;
+    const lista = pedirDatos(rLista);
     return {
       alumno: a,
-      workouts: ver === 'plan' ? (listas.data ?? []) : [],
-      acts: ver === 'plan' ? [] : (listas.data ?? []).map(aligerar),
+      workouts: ver === 'plan' ? (lista ?? []) : [],
+      acts: ver === 'plan' ? [] : (lista ?? []).map(aligerar),
     };
   }, [id, ver]);
 
@@ -52,7 +55,7 @@ export default function Alumno() {
       <div className="topbar"><Link href="/coach" className="muted">← Alumnos</Link></div>
 
       {error && <p className="notice">{error}</p>}
-      {cargando || !datos ? <Esqueleto /> : (
+      {cargando ? <Esqueleto /> : !datos ? null : (
         <>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
             <Avatar url={a?.avatar_url} name={a?.full_name} size={52} />

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePantalla, papel } from '@/lib/pantalla';
+import { usePantalla, papel, pedirDatos } from '@/lib/pantalla';
 import Plan from '@/components/Plan';
 import TabBar from '@/components/TabBar';
 import Footer from '@/components/Footer';
@@ -10,8 +10,8 @@ import Esqueleto from '@/components/Esqueleto';
 export default function AthleteHome() {
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
     const desde = new Date(); desde.setDate(desde.getDate() - 21);
-    const { data } = await sb.from('workouts').select('*')
-      .eq('athlete_id', s.user.id).gte('date', desde.toISOString().slice(0, 10)).order('date');
+    const data = pedirDatos(await sb.from('workouts').select('*')
+      .eq('athlete_id', s.user.id).gte('date', desde.toISOString().slice(0, 10)).order('date'));
     return data ?? [];
   });
 
@@ -21,7 +21,7 @@ export default function AthleteHome() {
       <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{perfil?.full_name}</span></div>
       <h1>Mi plan</h1>
       {error && <p className="notice">{error}</p>}
-      {cargando || !datos ? <Esqueleto /> : (
+      {cargando ? <Esqueleto /> : !datos ? null : (
         <>
           {!perfil?.strava_athlete_id && <p className="notice">Conecta Strava para que tus carreras se sincronicen solas. <Link href="/api/strava/connect" style={{ textDecoration: 'underline' }}>Conectar</Link></p>}
           {!perfil?.coach_id && <p className="notice">Todavía no estás vinculado a un entrenador. Pídele su enlace de invitación.</p>}

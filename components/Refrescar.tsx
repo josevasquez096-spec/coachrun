@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { refrescar } from '@/lib/pantalla';
+import { refrescar as pedirRecarga } from '@/lib/pantalla';
 
 /** Tirar hacia abajo para actualizar, más un botón por si el gesto no funciona. */
 export default function Refrescar() {
@@ -11,9 +11,11 @@ export default function Refrescar() {
   const inicio = useRef<number | null>(null);
   const UMBRAL = 70;
 
-  async function refrescar() {
+  // Ojo con el nombre: si esta función se llamara `refrescar`, taparía a la de
+  // `lib/pantalla` y se llamaría a sí misma sin parar. Ya pasó.
+  function actualizar() {
     setCargando(true);
-    refrescar();
+    pedirRecarga();
     setTimeout(() => { setCargando(false); setTiro(0); }, 900);
   }
 
@@ -32,7 +34,7 @@ export default function Refrescar() {
       if (d > 0 && window.scrollY <= 0) setTiro(Math.min(d * 0.5, 90));
     };
     const onEnd = () => {
-      if (tiroRef.current >= UMBRAL) refrescar(); else setTiro(0);
+      if (tiroRef.current >= UMBRAL) actualizar(); else setTiro(0);
       inicio.current = null;
     };
     window.addEventListener('touchstart', onStart, { passive: true });
@@ -53,7 +55,7 @@ export default function Refrescar() {
       }}>
         {cargando ? 'Actualizando…' : tiro >= UMBRAL ? 'Suelta para actualizar' : tiro > 0 ? 'Tira para actualizar' : ''}
       </div>
-      <button onClick={refrescar} aria-label="Actualizar" title="Actualizar"
+      <button onClick={actualizar} aria-label="Actualizar" title="Actualizar"
         style={{
           position: 'fixed', right: 14, bottom: 78, zIndex: 40, width: 44, height: 44, borderRadius: '50%',
           border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', cursor: 'pointer',

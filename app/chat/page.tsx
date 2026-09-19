@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { usePantalla } from '@/lib/pantalla';
+import { usePantalla, pedirDatos } from '@/lib/pantalla';
 import Chat from '@/components/Chat';
 import TabBar from '@/components/TabBar';
 import Avatar from '@/components/Avatar';
@@ -15,10 +15,12 @@ export default function ChatPage() {
 
     // El coach sin alumno elegido ve la lista; el atleta va directo a su hilo.
     if (esCoach && !atleta) {
-      const [{ data: alumnos }, { data: nuevos }] = await Promise.all([
+      const [rAlumnos, rNuevos] = await Promise.all([
         sb.from('profiles').select('id,full_name,avatar_url').eq('coach_id', s.user.id).order('full_name'),
         sb.from('messages').select('athlete_id').eq('coach_id', s.user.id).neq('sender_id', s.user.id).is('read_at', null).limit(500),
       ]);
+      const alumnos = pedirDatos(rAlumnos);
+      const nuevos = pedirDatos(rNuevos);
       const sinLeer: Record<string, number> = {};
       for (const m of nuevos ?? []) sinLeer[m.athlete_id] = (sinLeer[m.athlete_id] ?? 0) + 1;
       return { modo: 'lista' as const, alumnos: alumnos ?? [], sinLeer };
@@ -29,14 +31,17 @@ export default function ChatPage() {
     if (!coachId) return { modo: 'sin-coach' as const };
 
     const otroId = esCoach ? athleteId : coachId;
-    const { data: otro } = await sb.from('profiles').select('full_name,avatar_url').eq('id', otroId).maybeSingle();
+    const rOtro = await sb.from('profiles').select('full_name,avatar_url').eq('id', otroId).maybeSingle();
+    if (rOtro.error) throw new Error(rOtro.error.message);
+    const otro = rOtro.data;
     return { modo: 'hilo' as const, athleteId, coachId, otro, esCoach };
   }, [atleta]);
 
   const rol = perfil?.role === 'coach' ? 'coach' : 'athlete';
 
   if (error) return <main className="shell"><h1>Mensajes</h1><p className="notice">{error}</p><TabBar role={rol} /></main>;
-  if (cargando || !datos || !sesion) return <main className="shell"><h1>Mensajes</h1><Esqueleto /><TabBar role={rol} /></main>;
+  if (cargando) return <main className="shell"><h1>Mensajes</h1><Esqueleto /><TabBar role={rol} /></main>;
+  if (!datos || !sesion) return <main className="shell"><h1>Mensajes</h1><p className="notice">No se pudieron cargar los mensajes. Necesitan conexión.</p><TabBar role={rol} /></main>;
 
   if (datos.modo === 'sin-coach') return (
     <main className="shell">
