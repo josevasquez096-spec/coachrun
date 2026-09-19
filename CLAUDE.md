@@ -252,6 +252,17 @@ Medido en un Samsung real (no simulado), con la app en primer plano:
   acercarse. **Falta el mismo contraste corriendo**, que es el uso real, antes
   de plantearse recalibrar nada.
 
+- **Con la app de verdad (no la de prueba), 25 min caminando un recorrido con
+  muchas paradas:** Garmin 500 m, app **490 m**. Un 2 % por debajo, la mitad de
+  desvío que en la prueba anterior. Lo valioso no es el 2 % (a 500 m cualquier
+  diferencia pesa mucho en porcentaje), sino **que las paradas no inflaron
+  nada**: estar parado es justo el caso que antes hacía marcar de más, y el
+  filtro lo aguantó en la calle, no solo en la simulación.
+  En esa misma prueba el teléfono estuvo **bloqueado casi todo el rato y
+  usando otras apps por encima**, y siguió midiendo: es una prueba más dura que
+  la de solo apagar la pantalla. La actividad terminada apareció luego sin
+  problema en la web. **Falta todavía el contraste corriendo**, y probar la voz.
+
 - **Con la pantalla bloqueada todo el rato: siguió midiendo.** Esta era la
   prueba que decidía si la app nativa merecía la pena, y la respuesta es sí.
   Es justo lo que el navegador NO puede hacer, y el único motivo de peso para
