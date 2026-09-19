@@ -310,6 +310,25 @@ pantalla y así el número no parpadea. Se refresca cada 30 s y al volver a la a
   y la voz se queda colgada aceptando frases sin decirlas (se llama a
   `speechSynthesis.cancel()` antes de cada frase). Las frases van en cola: dos
   seguidas se cortaban entre sí.
+- **La app del teléfono entraba y se quedaba muda.** Metías la contraseña y no
+  pasaba nada: ni error ni pantalla nueva. La contraseña era correcta y la
+  sesión se guardaba (eso lo hace Supabase, y funciona); lo que fallaba era la
+  llamada siguiente a `/api/perfil`. Dentro del APK las pantallas se sirven
+  desde `https://localhost`, así que toda llamada a Vercel es de otro origen y
+  el navegador pregunta antes si el servidor la acepta (petición `OPTIONS`).
+  Nadie contestaba eso, y el navegador **descarta la respuesta sin avisar**.
+  Arreglado con las cabeceras `Access-Control-*` en `next.config.js` para
+  `/api/:ruta*`. Si se añade otra ruta de servidor fuera de `/api`, hay que
+  acordarse de cubrirla también.
+  El `Allow-Origin` va en `*` y **no** se pone `Allow-Credentials`, a propósito:
+  la app se identifica con la cabecera `Authorization`, y sin esa línea el
+  navegador se niega a mandar cookies a otro origen, así que la sesión por
+  cookie de la web queda fuera del alcance de cualquier web ajena.
+- Ligado a lo anterior: `app/page.tsx` **se tragaba** el fallo de `/api/perfil`
+  y por eso el síntoma fue "no hace nada" en vez de un mensaje. Costó una
+  sesión entera de pruebas a ciegas. Los fallos de red se traducen con
+  `motivoDeFallo()` de `lib/api.ts`, porque el navegador solo dice
+  «Failed to fetch», que no ayuda a nadie.
 - La voz leía solo un extremo del ritmo ("a 3:00" en vez de "entre 3 y 3:30") y
   demasiado rápido. Los textos hablados se arman con `dictarCantidad()` y
   `dictarObjetivo()` de `lib/phases.ts`, no a mano: "3:30" hay que dictarlo
