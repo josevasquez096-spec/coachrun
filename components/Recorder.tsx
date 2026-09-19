@@ -2,7 +2,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { fmtPace, fmtTime, todayLocal } from '@/lib/format';
+import { fmtPace, fmtTime, todayLocal, deporteDe, DEPORTE_ICONO, DEPORTE_LABEL } from '@/lib/format';
 import { describe, expand, fmtAmount, fmtPaceStr, type Phase, type Step } from '@/lib/phases';
 import { zonas, zonaDe, RPE_LABEL, type Zona } from '@/lib/zones';
 import { bleDisponible } from '@/lib/ble';
@@ -10,7 +10,10 @@ import * as ses from '@/lib/session';
 
 const RunMap = dynamic(() => import('./RunMap'), { ssr: false });
 
-type Pendiente = { id: string; date: string; title: string; target_distance_km: number | null; target_pace: string | null; phases: Phase[] | null; completed: boolean };
+type Pendiente = { id: string; date: string; type?: string | null; title: string; target_distance_km: number | null; target_pace: string | null; phases: Phase[] | null; completed: boolean };
+
+/** Lo que se puede grabar con GPS. Fuerza y descanso no se graban aquí. */
+const GRABABLES = ['run', 'walk', 'trail'] as const;
 type Perfil = { max_hr: number | null; resting_hr: number | null };
 
 /**
@@ -91,6 +94,10 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
   const [elegido, setElegido] = useState<Pendiente | null>(inicial);
   const [libre, setLibre] = useState(false);
   const [sonido, setSonido] = useState(true);
+  // El deporte lo propone el entrenamiento asignado, pero manda el atleta: si
+  // le mandas un rodaje y acaba caminando, que quede como caminata.
+  const [tocado, setTocado] = useState(false);
+  const [deporte, setDeporte] = useState<string>(deporteDe(inicial?.type));
 
   const enMarcha = S.estado !== 'idle';
   const previo = libre ? null : elegido;
@@ -112,10 +119,20 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
   const onTarget = step?.paceLow && step?.paceHigh && S.recentPace
     ? S.recentPace < step.paceLow ? 'rápido' : S.recentPace > step.paceHigh ? 'lento' : 'en ritmo' : null;
 
+  // Al cambiar de entrenamiento se reajusta el deporte, salvo que el atleta ya
+  // lo haya elegido a mano: ahí manda él.
+  function elegir(p: Pendiente | null) {
+    setElegido(p); setLibre(p === null);
+    if (!tocado) setDeporte(deporteDe(p?.type));
+  }
+
+  const deporteActual = enMarcha ? S.deporte : deporte;
+
   function empezar() {
     ses.iniciar({
       workoutId: previo?.id ?? null,
-      titulo: previo?.title ?? 'Carrera',
+      titulo: previo?.title ?? DEPORTE_LABEL[deporte] ?? 'Carrera',
+      deporte,
       steps, fases, sonido, subirStrava: hasStrava,
     });
   }
@@ -124,13 +141,13 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
     <div>
       {S.estado === 'idle' && (delDia.length > 0 || otros.length > 0) && (
         <div className="card" style={{ marginBottom: 12 }}>
-          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>¿QUÉ VAS A CORRER?</div>
+          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>¿QUÉ VAS A HACER?</div>
           {[...delDia, ...otros].map((p) => {
             const sel = !libre && elegido?.id === p.id;
             const fecha = new Date(p.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' });
             return (
-              <button key={p.id} onClick={() => { setElegido(p); setLibre(false); }} className={`elige ${sel ? 'on' : ''}`}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{p.title} {p.completed && <span className="muted" style={{ fontWeight: 400 }}>· ya marcado</span>}</div>
+              <button key={p.id} onClick={() => elegir(p)} className={`elige ${sel ? 'on' : ''}`}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{DEPORTE_ICONO[deporteDe(p.type)] ?? ''} {p.title} {p.completed && <span className="muted" style={{ fontWeight: 400 }}>· ya marcado</span>}</div>
                 <div className="muted" style={{ fontSize: 13 }}>
                   {p.date === hoy ? 'Hoy' : fecha}
                   {p.phases?.length ? ` · ${expand(p.phases).length} fases` : p.target_distance_km ? ` · ${p.target_distance_km} km` : ''}
@@ -138,17 +155,33 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
               </button>
             );
           })}
-          <button onClick={() => setLibre(true)} className={`elige ${libre ? 'on' : ''}`}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>Carrera libre</div>
+          <button onClick={() => elegir(null)} className={`elige ${libre ? 'on' : ''}`}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Libre</div>
             <div className="muted" style={{ fontSize: 13 }}>Sin entrenamiento asignado</div>
           </button>
+        </div>
+      )}
+
+      {S.estado === 'idle' && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>CÓMO LO VAS A HACER</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {GRABABLES.map((d) => (
+              <button key={d} onClick={() => { setDeporte(d); setTocado(true); }}
+                className={`elige ${deporte === d ? 'on' : ''}`}
+                style={{ flex: 1, textAlign: 'center', marginBottom: 0 }}>
+                <div style={{ fontSize: 20, lineHeight: 1.1 }}>{DEPORTE_ICONO[d]}</div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{DEPORTE_LABEL[d]}</div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {enMarcha && (
         <div className="card" style={{ marginBottom: 12 }}>
           <span className="pill">{S.estado === 'paused' ? 'En pausa' : S.estado === 'running' ? 'En marcha' : 'Terminada'}</span>{' '}
-          <b>{S.titulo}</b>
+          <b>{DEPORTE_ICONO[deporteActual] ?? ''} {S.titulo}</b>
         </div>
       )}
 

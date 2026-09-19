@@ -47,11 +47,18 @@ export async function fetchActivity(userId: string, stravaId: number) {
 }
 
 /** Sube un GPX a Strava (igual que hace Garmin Connect). */
-export async function uploadGpx(userId: string, gpx: string, name: string) {
+/**
+ * Sube la traza a Strava.
+ *
+ * `sportType` es el nombre que usa Strava (Run, Walk, TrailRun). Importa
+ * acertarlo: una caminata subida como carrera le ensucia las estadísticas al
+ * atleta allí, y Strava no deja cambiarlo cómodamente después.
+ */
+export async function uploadGpx(userId: string, gpx: string, name: string, sportType = 'Run') {
   const token = await accessTokenFor(userId);
   const fd = new FormData();
   fd.append('file', new Blob([gpx], { type: 'application/gpx+xml' }), 'run.gpx');
-  fd.append('data_type', 'gpx'); fd.append('name', name); fd.append('sport_type', 'Run');
+  fd.append('data_type', 'gpx'); fd.append('name', name); fd.append('sport_type', sportType);
   const r = await fetch('https://www.strava.com/api/v3/uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
   return r.json();
 }

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { fmtPace, fmtTime } from '@/lib/format';
+import { fmtPace, fmtTime, deporteDe, DEPORTE_ICONO, DEPORTE_LABEL } from '@/lib/format';
 import ActivityOverlay from './ActivityOverlay';
 import { RPE_LABEL } from '@/lib/zones';
 
@@ -8,6 +8,7 @@ export type Act = {
   id: string; workout_id: string | null; name: string | null; started_at: string;
   distance_m: number | null; moving_time_s: number | null; avg_hr: number | null;
   source: string; polyline: string | null; raw: any; rpe?: number | null; notes?: string | null;
+  type?: string | null; muscles?: string[] | null;
 };
 
 function Splits({ a }: { a: Act }) {
@@ -68,9 +69,10 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                 <div key={a.id} className="act">
                   <button className="act-head" onClick={() => setAbierta(abierto ? null : a.id)}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="act-title">{a.name ?? 'Actividad'}</div>
+                      <div className="act-title">{DEPORTE_ICONO[deporteDe(a.type)] ?? ''} {a.name ?? 'Actividad'}</div>
                       <div className="muted" style={{ fontSize: 13 }}>
                         {d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })} · {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
+                        {' · '}{DEPORTE_LABEL[deporteDe(a.type)] ?? 'Correr'}
                         {' · '}<span className={a.source === 'strava' ? 'strava' : 'muted'}>{a.source === 'strava' ? 'Strava' : 'MyCoachRuns'}</span>
                       </div>
                     </div>

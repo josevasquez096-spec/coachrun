@@ -26,6 +26,8 @@ export type Sesion = {
   estado: EstadoRec;
   workoutId: string | null;
   titulo: string;
+  /** Correr, caminar o trail. Decide cómo se guarda y cómo se enseña después. */
+  deporte: string;
   steps: Step[];
   fases: Phase[];   // las fases tal como las escribió el coach, sin desplegar
   pts: Point[];
@@ -46,7 +48,7 @@ export type Sesion = {
 };
 
 const VACIA: Sesion = {
-  estado: 'idle', workoutId: null, titulo: 'Carrera', steps: [], fases: [], pts: [],
+  estado: 'idle', workoutId: null, titulo: 'Carrera', deporte: 'run', steps: [], fases: [], pts: [],
   dist: 0, elapsed: 0, idx: 0, stepDist: 0, stepTime: 0, recentPace: 0,
   gpsAcc: null, hr: null, sensor: null, sonido: true, msg: '',
   rpe: null, notas: '', subirStrava: false,
@@ -202,7 +204,7 @@ function soltarGps() {
 
 /** Arranca una carrera nueva. Llamar siempre desde un clic: iOS exige un toque
  *  del usuario para dejar sonar el audio. */
-export function iniciar(cfg: { workoutId: string | null; titulo: string; steps: Step[]; fases: Phase[]; sonido: boolean; subirStrava: boolean }) {
+export function iniciar(cfg: { workoutId: string | null; titulo: string; deporte: string; steps: Step[]; fases: Phase[]; sonido: boolean; subirStrava: boolean }) {
   if (!('geolocation' in navigator)) { s.msg = 'Este navegador no tiene GPS.'; emitir(); return; }
   s = { ...VACIA, ...cfg, estado: 'running' };
   filtro = filtroNuevo(); marcas = []; ultimoKm = 0; hrSum = { suma: 0, n: 0 };
@@ -300,7 +302,7 @@ export async function guardar(hasStrava: boolean) {
   try {
     const r = await pedir('/api/strava/upload', { method: 'POST', body: JSON.stringify({
       points: s.pts, name: s.titulo, workoutId: s.workoutId ?? undefined, movingTime: s.elapsed,
-      distanceM: Math.round(s.dist),
+      distanceM: Math.round(s.dist), tipo: s.deporte,
       subirStrava: hasStrava && s.subirStrava, rpe: s.rpe, notas: s.notas || null, avgHr: media,
     }) });
     const j = await r.json().catch(() => ({}));

@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { fetchActivity } from '@/lib/strava';
 
+/**
+ * De cómo lo llama Strava a cómo lo llamamos aquí. Lo que no esté en la lista
+ * (bici, natación, gimnasio…) no se importa: esta app es de correr y caminar.
+ *
+ * «Hike» es caminar por el campo, así que entra como caminata; «trail» aquí
+ * significa trail *running*.
+ */
+const STRAVA_DEPORTE: Record<string, string> = {
+  Run: 'run', VirtualRun: 'run',
+  TrailRun: 'trail',
+  Walk: 'walk', Hike: 'walk',
+};
+const deporteDeStrava = (t?: string | null) => (t ? STRAVA_DEPORTE[t] ?? null : null);
+
 // Verificación de suscripción (Strava llama con hub.challenge)
 export async function GET(req: Request) {
   const u = new URL(req.url);
@@ -18,13 +32,15 @@ export async function POST(req: Request) {
   if (!p) return NextResponse.json({ ok: true });
   try {
     const a = await fetchActivity(p.id, ev.object_id);
-    if (a.type !== 'Run' && a.sport_type !== 'Run' && a.sport_type !== 'TrailRun') return NextResponse.json({ ok: true });
+    const deporte = deporteDeStrava(a.sport_type ?? a.type);
+    // Nadar, bici y demás no son cosa de esta app: se ignoran sin ruido.
+    if (!deporte) return NextResponse.json({ ok: true });
     const day = a.start_date_local.slice(0, 10);
     const { data: w } = await db.from('workouts').select('id').eq('athlete_id', p.id).eq('date', day).neq('type', 'rest').limit(1).maybeSingle();
     await db.from('activities').upsert({
       athlete_id: p.id, workout_id: w?.id ?? null, source: 'strava', strava_id: a.id, name: a.name,
       started_at: a.start_date, distance_m: a.distance, moving_time_s: a.moving_time, avg_hr: a.average_heartrate ?? null,
-      polyline: a.map?.summary_polyline ?? null, raw: a,
+      type: deporte, polyline: a.map?.summary_polyline ?? null, raw: a,
     }, { onConflict: 'strava_id' });
     if (w) await db.from('workouts').update({ completed: true }).eq('id', w.id);
   } catch (e) { console.error(e); }

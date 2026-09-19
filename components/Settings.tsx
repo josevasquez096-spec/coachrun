@@ -7,7 +7,6 @@ import AvatarUpload from './AvatarUpload';
 import { zonas } from '@/lib/zones';
 import { pedir } from '@/lib/api';
 import { refrescar } from '@/lib/pantalla';
-import Contacto from './Contacto';
 
 export default function Settings({ me, email }: { me: { id: string; full_name: string | null; role: string; strava_athlete_id: number | null; coach_id: string | null; avatar_url?: string | null; max_hr?: number | null; resting_hr?: number | null }; email?: string }) {
   const r = useRouter();
@@ -98,8 +97,6 @@ export default function Settings({ me, email }: { me: { id: string; full_name: s
           <a className="btn block" style={{ background: '#FC4C02', borderColor: '#FC4C02' }} href="/api/strava/connect">Conectar con Strava</a>
         </>
       )}
-
-      <Contacto deParte={me.full_name} />
 
       <h2>Sesión</h2>
       <button className="btn ghost block" onClick={out}>Cerrar sesión</button>

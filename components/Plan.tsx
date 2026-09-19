@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TYPE_LABEL, todayLocal } from '@/lib/format';
+import { TYPE_LABEL, todayLocal, deporteDe, DEPORTE_ICONO } from '@/lib/format';
 import { expand, describe, type Phase } from '@/lib/phases';
 import WorkoutForm from './WorkoutForm';
 import * as portapapeles from '@/lib/portapapeles';
@@ -104,7 +104,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className={`pill ${x.completed ? 'done' : x.type === 'rest' ? 'rest' : ''}`}>
-                        {x.completed ? '✓ Hecho' : TYPE_LABEL[x.type]}
+                        {x.completed ? '✓ Hecho' : `${DEPORTE_ICONO[deporteDe(x.type)] ?? ''} ${TYPE_LABEL[x.type] ?? x.type}`}
                       </span>
                       {x.date === hoy && !x.completed && <span className="pill" style={{ background: 'var(--ink)', color: '#fff' }}>Hoy</span>}
                     </div>
