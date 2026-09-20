@@ -7,9 +7,11 @@ import TabBar from '@/components/TabBar';
 import Avatar from '@/components/Avatar';
 import Esqueleto from '@/components/Esqueleto';
 import Cabecera from '@/components/Cabecera';
+import { useIdioma } from '@/lib/idioma';
 import { IcoFlecha } from '@/components/Iconos';
 
 export default function ChatPage() {
+  const { t } = useIdioma();
   const atleta = useSearchParams().get('atleta');
 
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
@@ -41,17 +43,17 @@ export default function ChatPage() {
 
   const rol = perfil?.role === 'coach' ? 'coach' : 'athlete';
 
-  const cab = <Cabecera titulo="Mensajes" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
-    frase={rol === 'coach' ? 'Habla con tus alumnos, resuelve dudas y ajusta el plan.' : 'Escríbele a tu entrenador cuando lo necesites.'} />;
+  const cab = <Cabecera titulo={t('chat.titulo')} nombre={perfil?.full_name} avatar={perfil?.avatar_url}
+    frase={t(rol === 'coach' ? 'chat.fraseCoach' : 'chat.fraseAtleta')} />;
 
   if (error) return <main className="shell">{cab}<p className="notice mal">{error}</p><TabBar role={rol} /></main>;
   if (cargando) return <main className="shell">{cab}<Esqueleto /><TabBar role={rol} /></main>;
-  if (!datos || !sesion) return <main className="shell">{cab}<p className="notice">No se pudieron cargar los mensajes. Necesitan conexión.</p><TabBar role={rol} /></main>;
+  if (!datos || !sesion) return <main className="shell">{cab}<p className="notice">{t('chat.sinCargar')}</p><TabBar role={rol} /></main>;
 
   if (datos.modo === 'sin-coach') return (
     <main className="shell">
       {cab}
-      <p className="card muted">Todavía no estás vinculado a un entrenador, así que no hay con quién conversar.</p>
+      <p className="card muted">{t('chat.sinCoach')}</p>
       <TabBar role="athlete" />
     </main>
   );
@@ -67,8 +69,8 @@ export default function ChatPage() {
               <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                 <Avatar url={a.avatar_url} name={a.full_name} size={44} />
                 <span style={{ minWidth: 0 }}>
-                  <span className="name" style={{ display: 'block' }}>{a.full_name || 'Sin nombre'}</span>
-                  <span className="estado">{nuevos ? `${nuevos} sin leer` : 'Al día'}</span>
+                  <span className="name" style={{ display: 'block' }}>{a.full_name || t('alumnos.sinNombre')}</span>
+                  <span className="estado">{nuevos ? t('chat.sinLeer', { n: nuevos }) : t('chat.alDia')}</span>
                 </span>
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -77,7 +79,7 @@ export default function ChatPage() {
               </span>
             </Link>
           );
-        }) : <p className="card muted">Aún no tienes alumnos.</p>}
+        }) : <p className="card muted">{t('chat.sinAlumnos')}</p>}
       </div>
       <TabBar role="coach" />
     </main>
@@ -88,7 +90,7 @@ export default function ChatPage() {
       {datos.esCoach && <div className="topbar"><Link href="/chat" className="muted">← Mensajes</Link></div>}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
         <Avatar url={datos.otro?.avatar_url} name={datos.otro?.full_name} size={44} />
-        <h1 style={{ margin: 0 }}>{datos.otro?.full_name ?? 'Chat'}</h1>
+        <h1 style={{ margin: 0 }}>{datos.otro?.full_name ?? t('tab.chat')}</h1>
       </div>
       <Chat hilo={{ coachId: datos.coachId, athleteId: datos.athleteId }} yo={sesion.user.id}
             nombreOtro={datos.otro?.full_name ?? 'tu entrenador'} />

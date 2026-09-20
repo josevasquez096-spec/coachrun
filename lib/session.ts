@@ -12,10 +12,11 @@
  * cierre de la app tampoco borre lo que llevaba corrido.
  */
 import { cerrar, filtroNuevo, medir, type Filtro, type Point } from './geo';
-import { dictarCantidad, dictarObjetivo, dictarRitmo, type Phase, type Step } from './phases';
+import { type Phase, type Step } from './phases';
+import { dictarCantidad, dictarDistancia, dictarNombre, dictarObjetivo, dictarRitmo, dictarTiempo } from './dictado';
+import { t } from './idioma';
 import { repartir as repartirPuro } from './reparto';
 import { seguirPosicion, enLaApp, type Parar } from './gps';
-import { fmtTime } from './format';
 import { initAudio, despertarAudio, callar, beep, doubleBeep, phaseBeep, speak } from './audio';
 import { conectarPulso, type HrHandle } from './ble';
 import { pedir } from './api';
@@ -99,8 +100,8 @@ function decirFase(i: number, prefijo = '') {
   const f = s.steps[i];
   if (!f || !s.sonido) return;
   phaseBeep();
-    // "Serie 2/12" la voz lo lee como una división: mejor "Serie 2 de 12".
-  const nombre = f.name.replace('/', ' de ');
+  // "Serie 2/12" la voz lo lee como una división: mejor "Serie 2 de 12".
+  const nombre = dictarNombre(f.name);
   setTimeout(() => speak(`${prefijo}${nombre}. ${dictarCantidad(f)}${dictarObjetivo(f)}`), 700);
 }
 
@@ -110,8 +111,8 @@ function repartir() {
   s.idx = r.idx; s.stepDist = r.stepDist; s.stepTime = r.stepTime;
   botellaD = r.boteD; botellaT = r.boteT;
   if (!r.saltos) return;
-  if (s.idx < s.steps.length) decirFase(s.idx, r.saltos > 1 ? 'Al día. ' : '');
-  else if (s.sonido) { phaseBeep(); setTimeout(() => speak('Entrenamiento completado. Buen trabajo.'), 700); }
+  if (s.idx < s.steps.length) decirFase(s.idx, r.saltos > 1 ? `${t('voz.alDia')} ` : '');
+  else if (s.sonido) { phaseBeep(); setTimeout(() => speak(t('voz.completado')), 700); }
 }
 
 // ---------------------------------------------------------------- reloj y GPS
@@ -163,8 +164,8 @@ function onPos(pos: { lat: number; lng: number; t: number; acc: number; alt?: nu
       const ritmo = s.elapsed / (s.dist / 1000);
       if (s.sonido) {
         doubleBeep();
-        const extra = s.hr ? `. Pulso ${s.hr}` : '';
-        setTimeout(() => speak(`Kilómetro ${km}. Ritmo medio ${dictarRitmo(ritmo)} por kilómetro${extra}`), 500);
+        const extra = s.hr ? t('voz.pulsoMedio', { ppm: s.hr }) : '';
+        setTimeout(() => speak(t('voz.kilometro', { n: km, ritmo: dictarRitmo(ritmo) }) + extra), 500);
       }
     }
 
@@ -213,8 +214,8 @@ export function iniciar(cfg: { workoutId: string | null; titulo: string; deporte
   initAudio();
   engancharGps();
   if (s.sonido) {
-    if (s.steps.length) decirFase(0, 'Empezamos. ');
-    else { phaseBeep(); setTimeout(() => speak('Empezamos. Buena carrera.'), 700); }
+    if (s.steps.length) decirFase(0, `${t('voz.empezamos')} `);
+    else { phaseBeep(); setTimeout(() => speak(`${t('voz.empezamos')} ${t('voz.buenaCarrera')}`), 700); }
   }
   guardarLocal(true);
   emitir();
@@ -227,7 +228,7 @@ export function continuar() {
   arranque = Date.now();
   initAudio();
   engancharGps();
-  if (s.sonido) { beep(720, 0.15); setTimeout(() => speak('Seguimos.'), 400); }
+  if (s.sonido) { beep(720, 0.15); setTimeout(() => speak(t('voz.seguimos')), 400); }
   guardarLocal(true);
   emitir();
 }
@@ -239,7 +240,7 @@ export function pausar() {
   s.dist += cerrar(filtro);
   soltarGps(); callar();
   s.estado = 'paused'; s.elapsed = segundos();
-  if (s.sonido) { beep(440, 0.2); setTimeout(() => speak('En pausa.'), 350); }
+  if (s.sonido) { beep(440, 0.2); setTimeout(() => speak(t('voz.enPausa')), 350); }
   guardarLocal(true);
   emitir();
 }
@@ -254,8 +255,9 @@ export function terminar() {
   if (s.sonido) {
     beep(880, 0.18);
     setTimeout(() => beep(600, 0.3), 220);
-    const km = (s.dist / 1000).toFixed(2).replace('.', ' coma ');
-    setTimeout(() => speak(`Actividad terminada. ${km} kilómetros en ${fmtTime(s.elapsed)}.`), 700);
+    // Ni "5.12" ni "12:34": los dos los lee la voz como una división.
+    const dist = dictarDistancia(s.dist), rato = dictarTiempo(s.elapsed);
+    setTimeout(() => speak(t('voz.terminada', { dist, tiempo: rato })), 700);
   }
   guardarLocal(true);
   emitir();

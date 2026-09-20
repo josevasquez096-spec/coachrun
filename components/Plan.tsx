@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TYPE_LABEL, todayLocal, deporteDe, DEPORTE_ICONO } from '@/lib/format';
-import { expand, describe, type Phase } from '@/lib/phases';
+import { expand, type Phase } from '@/lib/phases';
 import WorkoutForm from './WorkoutForm';
 import * as portapapeles from '@/lib/portapapeles';
 import { pedir } from '@/lib/api';
 import MapaMusculos from './MapaMusculos';
-import { nombresDe } from '@/lib/musculos';
 import { refrescar } from '@/lib/pantalla';
+import { locale, nombreTipo, nombresMusculos, t, useIdioma, describirFase } from '@/lib/idioma';
 
 type W = {
   id: string; date: string; type: string; title: string; description: string | null;
@@ -23,9 +23,10 @@ function lunesDe(fecha: string) {
   d.setDate(d.getDate() - dia);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-const corto = (f: string) => new Date(f + 'T12:00').toLocaleDateString('es', { day: 'numeric', month: 'short' });
+const corto = (f: string) => new Date(f + 'T12:00').toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 
 export default function Plan({ workouts, editable = false, athleteId, nombre }: { workouts: W[]; editable?: boolean; athleteId?: string; nombre?: string }) {
+  useIdioma();   // para que los textos cambien al cambiar de idioma
   const r = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [helpId, setHelpId] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
   const hoy = todayLocal();
 
   async function remove(id: string) {
-    if (!confirm('¿Borrar este entrenamiento?')) return;
+    if (!confirm(t('plan.borrarPregunta'))) return;
     setErr('');
     try {
       const res = await pedir(`/api/workouts/${id}`, { method: 'DELETE' });
@@ -68,7 +69,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
     refrescar();
   }
 
-  if (!workouts.length) return <p className="card muted">Todavía no hay entrenamientos en el plan.</p>;
+  if (!workouts.length) return <p className="card muted">{t('plan.vacio')}</p>;
 
   // Agrupamos por semana (lunes a domingo)
   const semanas = new Map<string, W[]>();
@@ -90,7 +91,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
         return (
           <section key={lunes} style={{ marginBottom: 26 }}>
             <div className="sec-head">
-              <span>{lunes === semanaActual ? 'Esta semana' : `${corto(lunes)} – ${corto(domStr)}`}</span>
+              <span>{lunes === semanaActual ? t('plan.estaSemana') : `${corto(lunes)} – ${corto(domStr)}`}</span>
               <span className="muted">{hechos}/{lista.length} · {km ? `${km.toFixed(1)} km` : '—'}</span>
             </div>
 
@@ -101,15 +102,15 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                 <article key={x.id} className={`wo ${x.date === hoy ? 'wo-hoy' : ''} ${x.completed ? 'wo-hecho' : ''}`}>
                   <div className="wo-day">
                     <b>{d.getDate()}</b>
-                    <small>{d.toLocaleDateString('es', { weekday: 'short' })}</small>
+                    <small>{d.toLocaleDateString(locale(), { weekday: 'short' })}</small>
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className={`pill ${x.completed ? 'done' : x.type === 'rest' ? 'rest' : ''}`}>
-                        {x.completed ? '✓ Hecho' : `${DEPORTE_ICONO[deporteDe(x.type)] ?? ''} ${TYPE_LABEL[x.type] ?? x.type}`}
+                        {x.completed ? `✓ ${t('plan.hecho')}` : `${DEPORTE_ICONO[deporteDe(x.type)] ?? ''} ${nombreTipo(x.type)}`}
                       </span>
-                      {x.date === hoy && !x.completed && <span className="pill" style={{ background: 'var(--ink)', color: '#fff' }}>Hoy</span>}
+                      {x.date === hoy && !x.completed && <span className="pill" style={{ background: 'var(--ink)', color: '#fff' }}>{t('grabar.hoy')}</span>}
                     </div>
                     <h3 className="wo-title">{x.title}</h3>
                     {(x.target_distance_km || x.target_duration_min || x.target_pace) && (
@@ -122,35 +123,35 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                     {x.description && <p className="wo-desc">{x.description}</p>}
 
                     <div className="wo-acts">
-                      <button className="chip" onClick={() => toggle(x)}>{x.completed ? 'Deshacer' : 'Marcar hecho'}</button>
+                      <button className="chip" onClick={() => toggle(x)}>{x.completed ? t('plan.deshacer') : t('plan.marcarHecho')}</button>
                       {steps.length > 0 && (
                         <button className="chip" onClick={() => setOpenId(openId === x.id ? null : x.id)}>
-                          {openId === x.id ? 'Ocultar fases' : `Ver ${steps.length} fases`}
+                          {openId === x.id ? t('plan.ocultarFases') : t('plan.verFases', { n: steps.length })}
                         </button>
                       )}
                       {x.phases && x.phases.length > 0 && (
                         <>
-                          <a className="chip" href={`/api/workouts/${x.id}/fit`}>Descargar .FIT</a>
-                          <button className="chip" onClick={() => setHelpId(helpId === x.id ? null : x.id)}>¿Cómo lo paso al Garmin?</button>
+                          <a className="chip" href={`/api/workouts/${x.id}/fit`}>{t('plan.descargarFit')}</a>
+                          <button className="chip" onClick={() => setHelpId(helpId === x.id ? null : x.id)}>{t('plan.comoGarmin')}</button>
                         </>
                       )}
                       {x.type === 'strength' && x.muscles?.length ? (
                         <button className="chip" onClick={() => setMusc(musc === x.id ? null : x.id)}>
-                          {musc === x.id ? 'Ocultar músculos' : `Ver ${x.muscles.length} músculos`}
+                          {musc === x.id ? t('plan.ocultarMusculos') : t('plan.verMusculos', { n: x.muscles.length })}
                         </button>
                       ) : null}
-                      {editable && <button className="chip" onClick={() => copiar(x)}>{copiadoId === x.id ? '✓ Copiado' : 'Copiar'}</button>}
-                      {editable && <button className="chip" onClick={() => setEditId(editId === x.id ? null : x.id)}>{editId === x.id ? 'Cerrar' : 'Editar'}</button>}
-                      {editable && <button className="chip danger" onClick={() => remove(x.id)}>Borrar</button>}
+                      {editable && <button className="chip" onClick={() => copiar(x)}>{copiadoId === x.id ? `✓ ${t('plan.copiado')}` : t('plan.copiar')}</button>}
+                      {editable && <button className="chip" onClick={() => setEditId(editId === x.id ? null : x.id)}>{editId === x.id ? t('com.cerrar') : t('plan.editar')}</button>}
+                      {editable && <button className="chip danger" onClick={() => remove(x.id)}>{t('plan.borrar')}</button>}
                     </div>
 
                     {helpId === x.id && (
                       <div className="notice" style={{ marginTop: 8, fontSize: 13 }}>
-                        No lo subas por la web de Garmin Connect: ahí solo se importan actividades ya hechas, y saldría como una ruta.
-                        <br />1. Conecta el reloj al computador con el cable USB.
-                        <br />2. Abre la unidad del reloj y entra a <b>Garmin → NewFiles</b>.
-                        <br />3. Copia el .FIT ahí dentro y desconecta el reloj.
-                        <br />4. En el reloj: Entrenamiento → Entrenamientos.
+                        {t('plan.garminAviso')}
+                        <br />{t('plan.garmin1')}
+                        <br />{t('plan.garmin2')} <b>Garmin → NewFiles</b>.
+                        <br />{t('plan.garmin3')}
+                        <br />{t('plan.garmin4')}
                       </div>
                     )}
 
@@ -159,7 +160,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                         {x.phases!.map((p, i) => (
                           <li key={p.id}>
                             <span className="n">{i + 1}</span>
-                            <div><b>{p.name}</b><div className="muted" style={{ fontSize: 13 }}>{describe(p)}</div></div>
+                            <div><b>{p.name}</b><div className="muted" style={{ fontSize: 13 }}>{describirFase(p)}</div></div>
                           </li>
                         ))}
                       </ol>
@@ -168,7 +169,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                     {musc === x.id && x.muscles?.length ? (
                       <div style={{ marginTop: 10 }}>
                         <MapaMusculos marcados={x.muscles} alto={230} id={`plan-${x.id}`} />
-                        <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>{nombresDe(x.muscles).join(' · ')}</p>
+                        <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>{nombresMusculos(x.muscles).join(' · ')}</p>
                       </div>
                     ) : null}
 

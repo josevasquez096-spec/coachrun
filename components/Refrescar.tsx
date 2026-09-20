@@ -2,9 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { refrescar as pedirRecarga } from '@/lib/pantalla';
+import { useIdioma } from '@/lib/idioma';
 
 /** Tirar hacia abajo para actualizar, más un botón por si el gesto no funciona. */
 export default function Refrescar() {
+  const { t } = useIdioma();
   const r = useRouter();
   const [tiro, setTiro] = useState(0);
   const [cargando, setCargando] = useState(false);
@@ -53,9 +55,9 @@ export default function Refrescar() {
         height: cargando ? 44 : tiro, overflow: 'hidden', display: 'grid', placeItems: 'center',
         transition: tiro === 0 || cargando ? 'height .25s' : 'none', color: 'var(--ink-2)', fontSize: 13, fontWeight: 700,
       }}>
-        {cargando ? 'Actualizando…' : tiro >= UMBRAL ? 'Suelta para actualizar' : tiro > 0 ? 'Tira para actualizar' : ''}
+        {cargando ? t('refr.actualizando') : tiro >= UMBRAL ? t('refr.suelta') : tiro > 0 ? t('refr.tira') : ''}
       </div>
-      <button onClick={actualizar} aria-label="Actualizar" title="Actualizar" className="btn-refrescar">
+      <button onClick={actualizar} aria-label={t('com.actualizar')} title={t('com.actualizar')} className="btn-refrescar">
         <span style={{ display: 'inline-block', transition: 'transform .6s', transform: cargando ? 'rotate(360deg)' : 'none' }}>⟳</span>
       </button>
     </>

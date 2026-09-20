@@ -1,5 +1,6 @@
 'use client';
-import { MUSCULOS, NOMBRE, ANCHO, EJE, MANCHAS, lados, type Cara } from '@/lib/musculos';
+import { MUSCULOS, ANCHO, EJE, MANCHAS, lados, type Cara } from '@/lib/musculos';
+import { nombreMusculo, useIdioma } from '@/lib/idioma';
 
 /**
  * El selector de músculos: los dos cuerpos más la lista de nombres.
@@ -30,6 +31,7 @@ export default function MapaMusculos({
   marcados: string[]; alTocar?: (id: string) => void;
   alto?: number; id?: string; conLista?: boolean;
 }) {
+  const { t } = useIdioma();
   const vivo = !!alTocar;
 
   const cara = (c: Cara) => {
@@ -62,7 +64,7 @@ export default function MapaMusculos({
                   strokeOpacity={on ? 0.95 : (vivo ? 0.5 : 0)}
                   style={vivo ? { cursor: 'pointer' } : undefined}
                   onClick={alTocar ? () => alTocar(m.id) : undefined}>
-                  <title>{m.nombre}</title>
+                  <title>{nombreMusculo(m.id)}</title>
                 </ellipse>
               </g>
             )));
@@ -98,14 +100,14 @@ export default function MapaMusculos({
                     border: `1px solid ${on ? ROJO_MUSCULO : 'var(--line)'}`,
                     background: on ? ROJO_MUSCULO : 'transparent',
                     color: on ? '#fff' : 'var(--ink-2)',
-                  }}>{m.nombre}</button>
+                  }}>{nombreMusculo(m.id)}</button>
               );
             })}
           </div>
           <p className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>
             {marcados.length
-              ? <>Marcados: <b>{MUSCULOS.filter((m) => marcados.includes(m.id)).map((m) => NOMBRE[m.id]).join(', ')}</b></>
-              : 'Toca los músculos en el dibujo o en la lista.'}
+              ? <>{t('musc.marcados')} <b>{MUSCULOS.filter((m) => marcados.includes(m.id)).map((m) => nombreMusculo(m.id)).join(', ')}</b></>
+              : t('musc.toca')}
           </p>
         </>
       )}

@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { nombresDe, ANCHO, EJE, MANCHAS, CARA_DE, lados } from '@/lib/musculos';
+import { ANCHO, EJE, MANCHAS, CARA_DE, lados } from '@/lib/musculos';
 import { fmtTime } from '@/lib/format';
 import MapaMusculos from './MapaMusculos';
+import { locale, nombresMusculos, useIdioma } from '@/lib/idioma';
 
 /**
  * La imagen de una sesión de fuerza, para guardar o compartir.
@@ -24,6 +25,7 @@ const cargar = (src: string) => new Promise<HTMLImageElement>((ok, mal) => {
 });
 
 export default function ImagenFuerza({ a }: { a: A }) {
+  const { t } = useIdioma();
   const [ocupado, setOcupado] = useState(false);
   const [msg, setMsg] = useState('');
   const marcados = a.muscles ?? [];
@@ -61,12 +63,12 @@ export default function ImagenFuerza({ a }: { a: A }) {
 
     g.fillStyle = '#fff'; g.textAlign = 'center';
     g.font = '800 54px system-ui, sans-serif';
-    g.fillText(a.name || 'Fuerza', L / 2, 110);
+    g.fillText(a.name || t('img.fuerza'), L / 2, 110);
     g.font = '500 30px system-ui, sans-serif'; g.fillStyle = '#B9C0B9';
-    const fecha = new Date(a.started_at).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' });
+    const fecha = new Date(a.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
     g.fillText(a.moving_time_s ? `${fecha} · ${fmtTime(a.moving_time_s)}` : fecha, L / 2, 158);
 
-    const nombres = nombresDe(marcados);
+    const nombres = nombresMusculos(marcados);
     g.font = '700 27px system-ui, sans-serif'; g.fillStyle = '#94F420';
     const linea1 = nombres.slice(0, 4).join(' · '), linea2 = nombres.slice(4).join(' · ');
     if (linea1) g.fillText(linea1, L / 2, y0 + altoFig + 62);
@@ -83,7 +85,7 @@ export default function ImagenFuerza({ a }: { a: A }) {
     setOcupado(true); setMsg('');
     try {
       const f = await generar();
-      if (!f) { setMsg('No se pudo crear la imagen.'); return; }
+      if (!f) { setMsg(t('img.noCreada')); return; }
       const nav: any = navigator;
       // En iPhone `<a download>` con un blob no funciona: el menú de compartir
       // es la única vía. Se intenta primero siempre.
@@ -96,7 +98,7 @@ export default function ImagenFuerza({ a }: { a: A }) {
       document.body.appendChild(el); el.click(); el.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (e: any) {
-      setMsg(e?.message ?? 'No se pudo guardar la imagen.');
+      setMsg(e?.message ?? t('img.noGuardada'));
     } finally { setOcupado(false); }
   }
 
@@ -104,9 +106,9 @@ export default function ImagenFuerza({ a }: { a: A }) {
   return (
     <div style={{ marginTop: 12 }}>
       <MapaMusculos marcados={marcados} alto={230} id="act" />
-      <p className="muted" style={{ fontSize: 13, margin: '6px 0 8px' }}>{nombresDe(marcados).join(' · ')}</p>
+      <p className="muted" style={{ fontSize: 13, margin: '6px 0 8px' }}>{nombresMusculos(marcados).join(' · ')}</p>
       <button className="btn ghost block" onClick={guardar} disabled={ocupado}>
-        {ocupado ? 'Creando la imagen…' : 'Guardar o compartir imagen'}
+        {ocupado ? t('img.creando') : t('img.guardar')}
       </button>
       {msg && <p className="notice" style={{ fontSize: 13 }}>{msg}</p>}
     </div>

@@ -7,8 +7,10 @@ import Footer from '@/components/Footer';
 import Refrescar from '@/components/Refrescar';
 import Esqueleto from '@/components/Esqueleto';
 import Cabecera from '@/components/Cabecera';
+import { useIdioma } from '@/lib/idioma';
 
 export default function AthleteHome() {
+  const { t } = useIdioma();
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
     const desde = new Date(); desde.setDate(desde.getDate() - 21);
     const data = pedirDatos(await sb.from('workouts').select('*')
@@ -19,13 +21,13 @@ export default function AthleteHome() {
   return (
     <main className="shell">
       <Refrescar />
-      <Cabecera titulo="Mi plan" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
-        frase="Lo que toca esta semana. Marca lo hecho y sal a correr." />
+      <Cabecera titulo={t('plan.titulo')} nombre={perfil?.full_name} avatar={perfil?.avatar_url}
+        frase={t('plan.frase')} />
       {error && <p className="notice mal">{error}</p>}
       {cargando ? <Esqueleto /> : !datos ? null : (
         <>
-          {!perfil?.strava_athlete_id && <p className="notice">Conecta Strava para que tus carreras se sincronicen solas. <Link href="/api/strava/connect" style={{ textDecoration: 'underline' }}>Conectar</Link></p>}
-          {!perfil?.coach_id && <p className="notice">Todavía no estás vinculado a un entrenador. Pídele su enlace de invitación.</p>}
+          {!perfil?.strava_athlete_id && <p className="notice">{t('plan.conectaStrava')} <Link href="/api/strava/connect" style={{ textDecoration: 'underline' }}>{t('plan.conectar')}</Link></p>}
+          {!perfil?.coach_id && <p className="notice">{t('plan.sinCoach')}</p>}
           <Plan workouts={datos} />
         </>
       )}

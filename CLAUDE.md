@@ -291,6 +291,48 @@ mide. Ojo, lleva **una copia a mano del filtro de `lib/geo.ts`** (no pasa por el
 compilador del proyecto): si se tocan el peso o el umbral, hay que cambiarlos
 allí también.
 
+## Idiomas (v6)
+Español, inglés, francés y portugués. Las frases están en `lib/textos/`, un
+archivo por idioma; **`es.ts` es la tabla de referencia** y las otras tres
+están obligadas por el tipo a tener todas sus claves, así que al añadir una
+frase en español el compilador avisa de las que faltan.
+
+- `lib/idioma.ts` es el almacén: vive **en el módulo, no en un contexto de
+  React**, porque la voz se dispara desde `lib/session.ts`, que está fuera de
+  React (mismo motivo que el motor de grabación). `t('clave', { pieza })` da la
+  frase; `useIdioma()` es lo que hace que un componente se redibuje al cambiar.
+- De dónde sale el idioma: lo que el usuario eligió a mano (guardado en el
+  teléfono, clave `coachrun.idioma`), si no el del teléfono, si no español.
+  El selector está en Cuenta.
+- **Arranca siempre en español y cambia justo después del primer dibujado**
+  (`arrancar()`, en un `useEffect`). Es a propósito: las pantallas vienen ya
+  dibujadas de fábrica en español (Vercel las prepara, el APK las lleva
+  dentro), y si el navegador pintara ya en otro idioma React vería un texto
+  distinto y descartaría la página entera. Se ve un parpadeo la primera vez.
+- Si falta una traducción, cae al español; nunca se enseña la clave.
+- **Lo que no se traduce**: lo que escribe el coach (títulos, notas, nombres de
+  fases, mensajes del chat). Es contenido suyo.
+- **La voz también habla en el idioma elegido.** `lib/audio.ts` le pasa
+  `VOZ[idioma()]` a `speechSynthesis` (antes estaba fijo en `es-ES`), y el
+  dictado se arma en `lib/dictado.ts` con las claves `voz.*`. Las reglas de
+  siempre valen en todos los idiomas: "3:30" se dicta "3 30", "Serie 2/12" se
+  dicta "Serie 2 de 12" y los decimales con la palabra ("5 coma 1"), o la voz
+  lo lee como una división.
+- `lib/dictado.ts` está separado de `lib/phases.ts` porque phases.ts lo usa
+  **también el servidor** (la ruta que genera el `.FIT`) y no puede depender de
+  un archivo de cliente. Por lo mismo, `describe()` y `expand()` siguen allí en
+  español: la versión traducida es `describirFase()` en `lib/idioma.ts`, y
+  `expand()` recibe los nombres por defecto como parámetro.
+- Las listas que usa el servidor (`TYPE_LABEL`, `DEPORTE_LABEL` de
+  `lib/format.ts`, `zonas()` de `lib/zones.ts`, `MUSCULOS` de `lib/musculos.ts`)
+  se quedan en español; para pintarlas están `nombreTipo()`, `nombreDeporte()`,
+  `nombreZona()`, `nombreRpe()` y `nombreMusculo()`.
+- Las fechas van con `locale()`, no con `'es'` a mano.
+
+Lo que **sigue en español pase lo que pase**: los avisos push (los arma el
+servidor, que no sabe en qué idioma anda cada atleta), el archivo `.FIT` del
+Garmin y los correos de Supabase.
+
 ## Chat (v3)
 `/chat` + `app/api/messages/route.ts`. El atleta habla siempre con su coach; el
 coach elige alumno con `?atleta=<id>`. La ruta comprueba que el atleta sea

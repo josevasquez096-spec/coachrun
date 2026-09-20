@@ -8,6 +8,7 @@ import { type Phase, totalMeters, totalSeconds } from '@/lib/phases';
 import MapaMusculos from './MapaMusculos';
 import { pedir } from '@/lib/api';
 import { refrescar, usePantalla } from '@/lib/pantalla';
+import { nombreTipo, useIdioma } from '@/lib/idioma';
 
 type Existing = {
   id: string; date: string; type: string; title: string; description: string | null; muscles?: string[] | null;
@@ -15,6 +16,7 @@ type Existing = {
 };
 
 export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId: string; existing?: Existing; onDone?: () => void }) {
+  const { t } = useIdioma();
   const r = useRouter();
   const [f, setF] = useState({
     date: existing?.date ?? todayLocal(),
@@ -50,7 +52,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
 
   const payload = () => ({
     date: f.date, type: f.type,
-    title: f.title || TYPE_LABEL[f.type],
+    title: f.title || nombreTipo(f.type),
     description: f.description || null,
     target_distance_km: phases.length ? Number((totalMeters(phases) / 1000).toFixed(2)) : null,
     target_duration_min: phases.length ? Math.round(totalSeconds(phases) / 60) : null,
@@ -70,7 +72,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
       if (existing) {
         const res = await pedir(`/api/workouts/${existing.id}`, { method: 'PATCH', body: JSON.stringify(payload()), signal: corta.signal });
         const j = await res.json().catch(() => ({}));
-        if (!res.ok) { setErr(j.error ?? 'No se pudo guardar.'); return; }
+        if (!res.ok) { setErr(j.error ?? t('cuenta.noGuardado')); return; }
         onDone?.(); refrescar();
         return;
       }
@@ -87,11 +89,11 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
         }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { setErr(j.error ?? 'No se pudo guardar.'); return; }
+      if (!res.ok) { setErr(j.error ?? t('cuenta.noGuardado')); return; }
       setF({ ...f, title: '', description: '', target_pace: '' }); setPhases([]); setTambien([]);
       onDone?.(); refrescar();
     } catch (e: any) {
-      setErr(e?.name === 'AbortError' ? 'El servidor tardó demasiado. Revisa la conexión e inténtalo otra vez.' : (e?.message ?? 'No se pudo guardar.'));
+      setErr(e?.name === 'AbortError' ? t('form.tardo') : (e?.message ?? t('cuenta.noGuardado')));
     } finally {
       clearTimeout(reloj);
       setSaving(false);
@@ -101,12 +103,12 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
   return (
     <div className="card">
       <div className="row">
-        <div className="field"><label>Fecha</label><input type="date" value={f.date} onChange={(e) => set('date', e.target.value)} /></div>
-        <div className="field"><label>Tipo</label><select value={f.type} onChange={(e) => set('type', e.target.value)}>{Object.entries(TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+        <div className="field"><label>{t('form.fecha')}</label><input type="date" value={f.date} onChange={(e) => set('date', e.target.value)} /></div>
+        <div className="field"><label>{t('form.tipo')}</label><select value={f.type} onChange={(e) => set('type', e.target.value)}>{Object.keys(TYPE_LABEL).map((k) => <option key={k} value={k}>{nombreTipo(k)}</option>)}</select></div>
 
       {!existing && otros.length > 0 && (
         <div className="field">
-          <label>Asignar también a</label>
+          <label>{t('form.tambienA')}</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {otros.map((a) => {
               const on = tambien.includes(a.id);
@@ -118,7 +120,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
                     border: `1px solid ${on ? 'var(--ink)' : 'var(--line)'}`,
                     background: on ? 'var(--lima)' : 'transparent',
                     color: 'var(--ink)',
-                  }}>{on ? '✓ ' : ''}{a.full_name || 'Sin nombre'}</button>
+                  }}>{on ? '✓ ' : ''}{a.full_name || t('form.sinNombre')}</button>
               );
             })}
           </div>
@@ -132,26 +134,26 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
 
       {f.type === 'strength' && (
         <div className="field">
-          <label>Músculos trabajados</label>
+          <label>{t('form.musculos')}</label>
           <MapaMusculos marcados={musculos} id="asignar"
             alTocar={(id) => setMusculos((m) => m.includes(id) ? m.filter((x) => x !== id) : [...m, id])} />
         </div>
       )}
       </div>
-      <div className="field"><label>Título</label><input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="Ej. Series 6×800" /></div>
+      <div className="field"><label>{t('form.titulo')}</label><input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder={t('form.tituloPista')} /></div>
 
-      <h2 style={{ fontSize: 15, margin: '14px 0 4px' }}>Fases</h2>
-      <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>El alumno las verá una a una mientras corre, con avisos al terminar cada una.</p>
+      <h2 style={{ fontSize: 15, margin: '14px 0 4px' }}>{t('form.fases')}</h2>
+      <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>{t('form.fasesDesc')}</p>
       <PhaseBuilder phases={phases} onChange={setPhases} />
 
-      <div className="field" style={{ marginTop: 14 }}><label>Notas</label>
-        <textarea rows={2} value={f.description} onChange={(e) => set('description', e.target.value)} placeholder="Sensaciones a buscar, material, terreno…" /></div>
+      <div className="field" style={{ marginTop: 14 }}><label>{t('form.notas')}</label>
+        <textarea rows={2} value={f.description} onChange={(e) => set('description', e.target.value)} placeholder={t('form.notasPista')} /></div>
       {err && <p className="notice">{err}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button className="btn flare" style={{ flex: 1 }} onClick={save} disabled={saving}>
-          {saving ? 'Guardando…' : existing ? 'Guardar cambios' : 'Asignar'}
+          {saving ? t('cuenta.guardando') : existing ? t('form.guardarCambios') : t('form.asignar')}
         </button>
-        {existing && <button className="btn ghost" onClick={onDone}>Cancelar</button>}
+        {existing && <button className="btn ghost" onClick={onDone}>{t('com.cancelar')}</button>}
       </div>
     </div>
   );

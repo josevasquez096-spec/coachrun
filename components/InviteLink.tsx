@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { IcoInvitar, IcoEnlace } from './Iconos';
 import { dominioPublico } from '@/lib/api';
+import { useIdioma } from '@/lib/idioma';
 
 export default function InviteLink({ coachId }: { coachId: string }) {
+  const { t } = useIdioma();
   const [copied, setCopied] = useState(false);
   const link = `${dominioPublico()}/?coach=${coachId}`;
 
@@ -11,7 +13,7 @@ export default function InviteLink({ coachId }: { coachId: string }) {
     try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch {}
   }
   async function share() {
-    const text = `Únete a mi grupo de entrenamiento en MyCoachRuns: ${link}`;
+    const text = t('invitar.compartir', { link });
     if (navigator.share) { try { await navigator.share({ title: 'MyCoachRuns', text, url: link }); return; } catch {} }
     copy();
   }
@@ -21,11 +23,11 @@ export default function InviteLink({ coachId }: { coachId: string }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
         <span className="icono"><IcoInvitar /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="titulo">Invitar alumnos</div>
-          <p className="desc">Comparte el enlace y súmalos a tu grupo.</p>
+          <div className="titulo">{t('invitar.titulo')}</div>
+          <p className="desc">{t('invitar.desc')}</p>
         </div>
         <button className="btn-lima-borde" onClick={share}>
-          <IcoEnlace />{copied ? 'Copiado' : 'Copiar'}
+          <IcoEnlace />{copied ? t('invitar.copiado') : t('invitar.copiar')}
         </button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, color: '#9FB295', fontSize: 11.5, minWidth: 0 }}>

@@ -2,10 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import * as avisos from '@/lib/avisos';
 import { pedir } from '@/lib/api';
+import { locale, useIdioma } from '@/lib/idioma';
 
 export type Msg = { id: string; sender_id: string; body: string; created_at: string };
 
 export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string; athleteId: string }; yo: string; nombreOtro: string }) {
+  const { t } = useIdioma();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [texto, setTexto] = useState('');
   const [cargando, setCargando] = useState(true);
@@ -38,15 +40,15 @@ export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string
     setMsgs((m) => [...m, provisional]);
     setTimeout(() => fin.current?.scrollIntoView({ behavior: 'smooth' }), 40);
     const r = await pedir('/api/messages', { method: 'POST', body: JSON.stringify({ ...hilo, body }) });
-    if (!r.ok) { setErr('No se pudo enviar. Inténtalo de nuevo.'); setMsgs((m) => m.filter((x) => x.id !== provisional.id)); setTexto(body); }
+    if (!r.ok) { setErr(t('chat.noEnviado')); setMsgs((m) => m.filter((x) => x.id !== provisional.id)); setTexto(body); }
     else cargar(true);
   }
 
   return (
     <div>
       <div className="chat">
-        {cargando && <p className="muted" style={{ fontSize: 13 }}>Cargando…</p>}
-        {!cargando && !msgs.length && <p className="muted" style={{ fontSize: 14 }}>Aún no hay mensajes con {nombreOtro}. Escribe el primero.</p>}
+        {cargando && <p className="muted" style={{ fontSize: 13 }}>{t('chat.cargando')}</p>}
+        {!cargando && !msgs.length && <p className="muted" style={{ fontSize: 14 }}>{t('chat.vacio', { nombre: nombreOtro })}</p>}
         {msgs.map((m, i) => {
           const mio = m.sender_id === yo;
           const d = new Date(m.created_at);
@@ -54,10 +56,10 @@ export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string
           const nuevoDia = !anterior || new Date(anterior.created_at).toDateString() !== d.toDateString();
           return (
             <div key={m.id}>
-              {nuevoDia && <div className="chat-dia">{d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</div>}
+              {nuevoDia && <div className="chat-dia">{d.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div>}
               <div className={`burbuja ${mio ? 'mia' : ''}`}>
                 {m.body}
-                <span className="hora">{d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="hora">{d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
           );
@@ -68,8 +70,8 @@ export default function Chat({ hilo, yo, nombreOtro }: { hilo: { coachId: string
       <div className="chat-envio">
         <textarea rows={1} value={texto} onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
-          placeholder={`Mensaje para ${nombreOtro}`} />
-        <button className="btn flare" onClick={enviar} disabled={!texto.trim()}>Enviar</button>
+          placeholder={t('chat.pista', { nombre: nombreOtro })} />
+        <button className="btn flare" onClick={enviar} disabled={!texto.trim()}>{t('chat.enviar')}</button>
       </div>
     </div>
   );

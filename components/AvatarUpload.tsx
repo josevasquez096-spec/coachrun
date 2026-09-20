@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import Avatar from './Avatar';
 import { refrescar } from '@/lib/pantalla';
+import { useIdioma } from '@/lib/idioma';
 
 /** Recorta al centro y reduce a 512 px para que la subida sea liviana. */
 async function reducir(file: File): Promise<Blob> {
@@ -17,6 +18,7 @@ async function reducir(file: File): Promise<Blob> {
 }
 
 export default function AvatarUpload({ userId, url, name }: { userId: string; url?: string | null; name?: string | null }) {
+  const { t } = useIdioma();
   const r = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -37,10 +39,10 @@ export default function AvatarUpload({ userId, url, name }: { userId: string; ur
       const publicUrl = `${data.publicUrl}?v=${Date.now()}`;
       const { error: e2 } = await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', userId);
       if (e2) throw e2;
-      setMsg('Foto actualizada.');
+      setMsg(t('avatar.hecho'));
       refrescar();
     } catch (e: any) {
-      setMsg(e?.message ?? 'No se pudo subir la foto.');
+      setMsg(e?.message ?? t('avatar.fallo'));
       setPreview(null);
     }
     setBusy(false);
@@ -53,7 +55,7 @@ export default function AvatarUpload({ userId, url, name }: { userId: string; ur
         <input ref={input} type="file" accept="image/*" style={{ display: 'none' }}
           onChange={(e) => { const f = e.target.files?.[0]; if (f) subir(f); }} />
         <button className="btn ghost" style={{ padding: '7px 14px', fontSize: 13 }} onClick={() => input.current?.click()} disabled={busy}>
-          {busy ? 'Subiendo…' : url ? 'Cambiar foto' : 'Subir foto'}
+          {busy ? t('avatar.subiendo') : url ? t('avatar.cambiar') : t('avatar.subir')}
         </button>
         {msg && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{msg}</div>}
       </div>

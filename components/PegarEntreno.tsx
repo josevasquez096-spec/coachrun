@@ -2,13 +2,15 @@
 import { useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { todayLocal } from '@/lib/format';
-import { describe } from '@/lib/phases';
+
 import * as portapapeles from '@/lib/portapapeles';
 import { pedir } from '@/lib/api';
 import { refrescar } from '@/lib/pantalla';
+import { useIdioma, describirFase } from '@/lib/idioma';
 
 /** El aviso de "tienes un entrenamiento copiado" con el botón para pegarlo aquí. */
 export default function PegarEntreno({ athleteId, nombre }: { athleteId: string; nombre: string }) {
+  const { t } = useIdioma();
   const r = useRouter();
   const c = useSyncExternalStore(portapapeles.suscribir, portapapeles.leer, portapapeles.leerEnServidor);
   const [fecha, setFecha] = useState('');
@@ -27,17 +29,17 @@ export default function PegarEntreno({ athleteId, nombre }: { athleteId: string;
         body: JSON.stringify({ athleteId, date: cuando, workout: c }),
       });
       const j = await res.json().catch(() => ({}));
-      if (!res.ok) { setErr(j.error ?? 'No se pudo pegar.'); setEstado('listo'); return; }
+      if (!res.ok) { setErr(j.error ?? t('pegar.noPegado')); setEstado('listo'); return; }
       setEstado('hecho');
       refrescar();
     } catch {
-      setErr('No se pudo pegar. Revisa la conexión.'); setEstado('listo');
+      setErr(t('pegar.noPegadoRed')); setEstado('listo');
     }
   }
 
   return (
     <div className="card" style={{ borderColor: 'var(--ink)', borderWidth: 2, marginBottom: 14 }}>
-      <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>ENTRENAMIENTO COPIADO</div>
+      <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>{t('pegar.copiado')}</div>
       <div style={{ fontWeight: 700, fontSize: 16, margin: '3px 0 2px' }}>{c.title}</div>
       <div className="muted" style={{ fontSize: 13 }}>
         De {c.deQuien}
@@ -48,7 +50,7 @@ export default function PegarEntreno({ athleteId, nombre }: { athleteId: string;
         <ol className="fases" style={{ marginTop: 8 }}>
           {c.phases.map((p, i) => (
             <li key={i}><span className="n">{i + 1}</span>
-              <div><b>{p.name}</b><div className="muted" style={{ fontSize: 13 }}>{describe(p)}</div></div>
+              <div><b>{p.name}</b><div className="muted" style={{ fontSize: 13 }}>{describirFase(p)}</div></div>
             </li>
           ))}
         </ol>
@@ -58,8 +60,8 @@ export default function PegarEntreno({ athleteId, nombre }: { athleteId: string;
         <>
           <p className="notice" style={{ marginTop: 10 }}>Pegado en el plan de {nombre}.</p>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn ghost" style={{ flex: 1 }} onClick={() => setEstado('listo')}>Pegar otra fecha</button>
-            <button className="btn ghost" style={{ flex: 1 }} onClick={portapapeles.vaciar}>Quitar copia</button>
+            <button className="btn ghost" style={{ flex: 1 }} onClick={() => setEstado('listo')}>{t('pegar.otraFecha')}</button>
+            <button className="btn ghost" style={{ flex: 1 }} onClick={portapapeles.vaciar}>{t('pegar.quitarCopia')}</button>
           </div>
         </>
       ) : (
@@ -71,9 +73,9 @@ export default function PegarEntreno({ athleteId, nombre }: { athleteId: string;
           {err && <p className="notice">{err}</p>}
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn flare" style={{ flex: 1 }} onClick={pegar} disabled={estado === 'pegando'}>
-              {estado === 'pegando' ? 'Pegando…' : `Pegar en el plan de ${nombre}`}
+              {estado === 'pegando' ? t('pegar.pegando') : t('pegar.enPlan', { nombre })}
             </button>
-            <button className="btn ghost" onClick={portapapeles.vaciar}>Quitar</button>
+            <button className="btn ghost" onClick={portapapeles.vaciar}>{t('pegar.quitar')}</button>
           </div>
         </>
       )}

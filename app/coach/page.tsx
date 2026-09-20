@@ -12,10 +12,12 @@ import Avatar from '@/components/Avatar';
 import Refrescar from '@/components/Refrescar';
 import Esqueleto from '@/components/Esqueleto';
 import Cabecera from '@/components/Cabecera';
+import { useIdioma } from '@/lib/idioma';
 import { IcoFlecha } from '@/components/Iconos';
 
 export default function Coach() {
   const r = useRouter();
+  const { t } = useIdioma();
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
     const hoy = todayLocal();
     const [rAlumnos, rYo, rPlanes] = await Promise.all([
@@ -39,8 +41,8 @@ export default function Coach() {
   return (
     <main className="shell">
       <Refrescar />
-      <Cabecera titulo="Alumnos" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
-        frase="Gestiona tus atletas, crea planes y lleva su progreso al siguiente nivel." />
+      <Cabecera titulo={t('alumnos.titulo')} nombre={perfil?.full_name} avatar={perfil?.avatar_url}
+        frase={t('alumnos.frase')} />
       {error && <p className="notice mal">{error}</p>}
       {cargando ? <Esqueleto /> : !datos || !sesion ? null : (
         <>
@@ -55,10 +57,10 @@ export default function Coach() {
                   <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                     <Avatar url={a.avatar_url} name={a.full_name} size={44} />
                     <span style={{ minWidth: 0 }}>
-                      <span className="name" style={{ display: 'block' }}>{a.full_name || 'Sin nombre'}</span>
+                      <span className="name" style={{ display: 'block' }}>{a.full_name || t('alumnos.sinNombre')}</span>
                       <span className="estado">
                         <i className="punto-estado" />
-                        {a.con_plan ? 'En entrenamiento' : 'Sin plan'}
+                        {t(a.con_plan ? 'alumnos.enTrenamiento' : 'alumnos.sinPlan')}
                       </span>
                     </span>
                   </span>
@@ -68,7 +70,7 @@ export default function Coach() {
                   </span>
                 </Link>
               );
-            }) : <p className="card">Aún no tienes alumnos. Comparte tu enlace de invitación.</p>}
+            }) : <p className="card">{t('alumnos.vacio')}</p>}
           </div>
         </>
       )}

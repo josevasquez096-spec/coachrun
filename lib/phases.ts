@@ -48,8 +48,15 @@ export function fmtAmount(mode: 'distance' | 'time', meters?: number, seconds?: 
   return s >= 60 && s % 60 === 0 ? `${s / 60} min` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} min`;
 }
 
-/** Convierte las fases del coach en la lista de pasos que se ejecutan uno tras otro. */
-export function expand(phases: Phase[]): Step[] {
+/**
+ * Convierte las fases del coach en la lista de pasos que se ejecutan uno tras otro.
+ *
+ * `textos` son los nombres que se le ponen a una recuperación que el coach dejó
+ * sin nombre. Van por parámetro y no leídos del idioma porque esta función la
+ * usa también el servidor para armar el archivo del Garmin, y allí no hay
+ * idioma que consultar: se queda con el español.
+ */
+export function expand(phases: Phase[], textos = { pausa: 'Pausa', recuperacion: 'Recuperación' }): Step[] {
   const out: Step[] = [];
   phases.forEach((p, fase) => {
     const times = Math.max(1, p.times ?? 1);
@@ -62,7 +69,7 @@ export function expand(phases: Phase[]): Step[] {
       const isLast = i === times - 1;
       if (p.rest && (!isLast || p.restAfter)) {
         out.push({
-          name: p.rest.name || (p.rest.activo === false ? 'Pausa' : 'Recuperación'),
+          name: p.rest.name || (p.rest.activo === false ? textos.pausa : textos.recuperacion),
           kind: 'rest', mode: p.rest.mode, meters: p.rest.meters, seconds: p.rest.seconds, fase,
         });
       }
@@ -93,33 +100,6 @@ export function describe(p: Phase) {
   return `${times}${dur}${pace}${zona}${rest}`;
 }
 
-/** Un ritmo tal como se dicta: "3:30" la voz lo lee raro, "3 30" lo lee bien. */
-export function dictarRitmo(sec?: number) {
-  if (!sec) return '';
-  const m = Math.floor(sec / 60), s = Math.round(sec % 60);
-  return s === 0 ? `${m} minutos` : `${m} ${String(s).padStart(2, '0')}`;
-}
-
-/** El objetivo de un paso, en palabras y completo (antes solo decía un extremo). */
-export function dictarObjetivo(s: Step) {
-  if (s.paceLow && s.paceHigh && s.paceLow !== s.paceHigh)
-    return `, a ritmo entre ${dictarRitmo(s.paceLow)} y ${dictarRitmo(s.paceHigh)} por kilómetro`;
-  const uno = s.paceLow || s.paceHigh;
-  if (uno) return `, a ritmo de ${dictarRitmo(uno)} por kilómetro`;
-  if (s.hrZone) return `, en zona ${s.hrZone} de pulso`;
-  return '';
-}
-
-/** La cantidad de un paso, en palabras. */
-export function dictarCantidad(s: Step) {
-  if (s.mode === 'distance') {
-    const m = s.meters ?? 0;
-    if (m >= 1000) { const km = m / 1000; return `${km % 1 === 0 ? km : km.toFixed(1).replace('.', ' coma ')} kilómetros`; }
-    return `${m} metros`;
-  }
-  const seg = s.seconds ?? 0;
-  if (seg < 60) return `${seg} segundos`;
-  const min = Math.floor(seg / 60), resto = seg % 60;
-  const mm = `${min} ${min === 1 ? 'minuto' : 'minutos'}`;
-  return resto ? `${mm} y ${resto} segundos` : mm;
-}
+/* El dictado de la voz (dictarRitmo, dictarObjetivo, dictarCantidad) se mudó a
+   `lib/dictado.ts`: depende del idioma elegido, y este archivo lo usa también
+   el servidor para generar el `.FIT`, donde no hay idioma que consultar. */

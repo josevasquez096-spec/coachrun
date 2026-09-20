@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseBrowser } from './supabase-browser';
 import { pedir, motivoDeFallo } from './api';
+import { t } from './idioma';
 
 export type Perfil = {
   id: string; full_name: string | null; role: string; coach_id: string | null;
@@ -49,7 +50,7 @@ function conTope<T>(promesa: Promise<T>, ms = TOPE_MS): Promise<T> {
 }
 
 /** Aviso que ve el usuario cuando se le enseña lo guardado en vez de lo de ahora. */
-export const SIN_CONEXION = 'Sin conexión: esto es lo último que se guardó en el teléfono.';
+export const SIN_CONEXION = () => t('grabar.sinConexion');
 
 /**
  * Pide a la pantalla que vuelva a traer sus datos.
@@ -127,7 +128,7 @@ export function usePantalla<T>(
         }
       }
       setSinConexion(viejo);
-      setError(viejo ? SIN_CONEXION : '');
+      setError(viejo ? SIN_CONEXION() : '');
     } catch (e: any) {
       setError(motivoDeFallo(e));
     } finally {

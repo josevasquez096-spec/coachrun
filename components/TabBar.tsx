@@ -4,10 +4,12 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useSyncExternalStore } from 'react';
 import * as avisos from '@/lib/avisos';
 import * as ses from '@/lib/session';
+import { useIdioma } from '@/lib/idioma';
 import { IcoAlumnos, IcoPlan, IcoActividades, IcoIniciar, IcoChat, IcoCuenta } from './Iconos';
 
 export default function TabBar({ role }: { role: 'coach' | 'athlete' }) {
   const p = usePathname();
+  const { t } = useIdioma();
   const sinLeer = useSyncExternalStore(avisos.suscribir, avisos.leer, avisos.leerEnServidor);
   const carrera = useSyncExternalStore(ses.suscribir, ses.leer, ses.leerEnServidor);
   const grabando = carrera.estado === 'running' || carrera.estado === 'paused';
@@ -17,12 +19,12 @@ export default function TabBar({ role }: { role: 'coach' | 'athlete' }) {
 
   type Tab = [ruta: string, nombre: string, icono: () => JSX.Element];
   const TODAS: Record<string, Tab> = {
-    alumnos: ['/coach', 'Alumnos', IcoAlumnos],
-    plan: ['/athlete', 'Plan', IcoPlan],
-    actividades: ['/activities', 'Actividades', IcoActividades],
-    iniciar: ['/record', 'Iniciar', IcoIniciar],
-    chat: ['/chat', 'Chat', IcoChat],
-    cuenta: ['/athlete/settings', 'Cuenta', IcoCuenta],
+    alumnos: ['/coach', t('tab.alumnos'), IcoAlumnos],
+    plan: ['/athlete', t('tab.plan'), IcoPlan],
+    actividades: ['/activities', t('tab.actividades'), IcoActividades],
+    iniciar: ['/record', t('tab.iniciar'), IcoIniciar],
+    chat: ['/chat', t('tab.chat'), IcoChat],
+    cuenta: ['/athlete/settings', t('tab.cuenta'), IcoCuenta],
   };
   const tabs: Tab[] = (role === 'coach'
     ? ['alumnos', 'plan', 'actividades', 'iniciar', 'chat', 'cuenta']
@@ -39,7 +41,7 @@ export default function TabBar({ role }: { role: 'coach' | 'athlete' }) {
             <span className="globo" aria-label={`${sinLeer.total} mensajes sin leer`}>{sinLeer.total > 99 ? '99+' : sinLeer.total}</span>
           )}
           {h === '/record' && grabando && (
-            <span className="punto grabando" aria-label={carrera.estado === 'paused' ? 'Carrera en pausa' : 'Grabando'} />
+            <span className="punto grabando" aria-label={carrera.estado === 'paused' ? t('grabar.enPausa') : t('grabar.enMarcha')} />
           )}
         </Link>
       ))}

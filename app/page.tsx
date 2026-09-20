@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { pedir, motivoDeFallo } from '@/lib/api';
 import LoginForm from '@/components/LoginForm';
 import Esqueleto from '@/components/Esqueleto';
+import { t } from '@/lib/idioma';
 
 export default function Home() {
   const r = useRouter();
@@ -31,7 +32,7 @@ export default function Home() {
           } else if (res.status !== 401 && vivo) {
             // 401 es lo normal cuando aún no has entrado; cualquier otra cosa
             // es un problema de verdad y se cuenta.
-            setFallo('El servidor respondió ' + res.status + ' al comprobar tu sesión.');
+            setFallo(t('entrar.servidorDijo', { n: res.status }));
           }
         } catch (e) { if (vivo) setFallo(motivoDeFallo(e)); }
       } else {

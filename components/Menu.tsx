@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LOGO, INSTAGRAM, STRAVA_AUTOR, CORREO, APOYO } from '@/lib/marca';
+import { useIdioma } from '@/lib/idioma';
 
 /**
  * El menú que se desliza desde la derecha.
@@ -17,6 +18,7 @@ import { LOGO, INSTAGRAM, STRAVA_AUTOR, CORREO, APOYO } from '@/lib/marca';
 export default function Menu() {
   const [abierto, setAbierto] = useState(false);
   const ruta = usePathname();
+  const { t } = useIdioma();
 
   useEffect(() => { setAbierto(false); }, [ruta]);
 
@@ -28,7 +30,7 @@ export default function Menu() {
 
   return (
     <>
-      <button className="abre-menu" aria-label="Abrir menú" onClick={() => setAbierto(true)}>
+      <button className="abre-menu" aria-label={t('menu.abrir')} onClick={() => setAbierto(true)}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
       </button>
@@ -39,7 +41,7 @@ export default function Menu() {
         <div className="cajon-cab">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={LOGO} alt="MyCoachRuns" style={{ height: 40, width: 'auto' }} />
-          <button aria-label="Cerrar" onClick={() => setAbierto(false)} className="cierra">
+          <button aria-label={t('menu.cerrar')} onClick={() => setAbierto(false)} className="cierra">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
@@ -47,13 +49,13 @@ export default function Menu() {
 
         <nav className="cajon-lista">
           <Link href="/servicios" className={ruta === '/servicios' ? 'on' : ''}>
-            <b>Servicios</b><small>Pacing en carrera y entrenamiento 1 a 1</small>
+            <b>{t('servicios.titulo')}</b><small>{t('menu.serviciosDesc')}</small>
           </Link>
-          <Link href="/athlete/settings"><b>Cuenta</b><small>Tu perfil, pulso y Strava</small></Link>
-          <a href={`mailto:${CORREO}`}><b>Escríbenos</b><small>{CORREO}</small></a>
-          <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer"><b>Instagram</b><small>@mycoachruns</small></a>
-          <a href={STRAVA_AUTOR} target="_blank" rel="noopener noreferrer"><b>Strava</b><small>Sigue al desarrollador</small></a>
-          <a href={APOYO} target="_blank" rel="noopener noreferrer"><b>Apoyar el proyecto</b><small>Invítame un café</small></a>
+          <Link href="/athlete/settings"><b>{t('cuenta.titulo')}</b><small>{t('menu.cuentaDesc')}</small></Link>
+          <a href={`mailto:${CORREO}`}><b>{t('menu.escribenos')}</b><small>{CORREO}</small></a>
+          <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer"><b>{t('menu.instagram')}</b><small>@mycoachruns</small></a>
+          <a href={STRAVA_AUTOR} target="_blank" rel="noopener noreferrer"><b>{t('menu.strava')}</b><small>{t('menu.stravaDesc')}</small></a>
+          <a href={APOYO} target="_blank" rel="noopener noreferrer"><b>{t('menu.apoyar')}</b><small>{t('menu.apoyarDesc')}</small></a>
         </nav>
 
         <p className="muted" style={{ fontSize: 11.5, textAlign: 'center', marginTop: 'auto', paddingTop: 16 }}>

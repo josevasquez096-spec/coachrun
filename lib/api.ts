@@ -14,6 +14,7 @@
  * fallaría en silencio, y eso no se ve hasta tener el teléfono en la mano.
  */
 import { supabaseBrowser } from './supabase-browser';
+import { t } from './idioma';
 
 /** Dirección del servidor. Vacía en la web (misma casa); completa en el APK. */
 export const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
@@ -57,9 +58,7 @@ export async function pedir(ruta: string, opciones: RequestInit = {}) {
 export function motivoDeFallo(e: any): string {
   const m = String(e?.message ?? e ?? '');
   if (/failed to fetch|load failed|networkerror|network request failed/i.test(m)) {
-    return BASE
-      ? 'No se pudo hablar con el servidor (' + BASE + '). Comprueba que el teléfono tiene internet.'
-      : 'No se pudo hablar con el servidor. Comprueba tu conexión.';
+    return BASE ? t('com.sinRedServidor', { url: BASE }) : t('com.sinRed');
   }
-  return m || 'Algo falló y no dijo por qué.';
+  return m || t('com.algoFallo');
 }

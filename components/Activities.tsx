@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { fmtPace, fmtTime, deporteDe, DEPORTE_ICONO, DEPORTE_LABEL } from '@/lib/format';
 import ActivityOverlay from './ActivityOverlay';
 import ImagenFuerza from './ImagenFuerza';
-import { RPE_LABEL } from '@/lib/zones';
+import { locale, nombreDeporte, nombreRpe, t, useIdioma } from '@/lib/idioma';
 
 export type Act = {
   id: string; workout_id: string | null; name: string | null; started_at: string;
@@ -19,7 +19,7 @@ function Splits({ a }: { a: Act }) {
   const best = Math.min(...paces), worst = Math.max(...paces);
   return (
     <div style={{ marginTop: 12 }}>
-      <div className="muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>PARCIALES POR KM</div>
+      <div className="muted" style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{t('act.parciales')}</div>
       {splits.map((s: any, i: number) => {
         const p = paces[i];
         const pct = worst > best ? 22 + ((worst - p) / (worst - best)) * 78 : 100;
@@ -39,8 +39,9 @@ function Splits({ a }: { a: Act }) {
 }
 
 export default function Activities({ acts, propias = true }: { acts: Act[]; propias?: boolean }) {
+  useIdioma();   // para que los textos cambien al cambiar de idioma
   const [abierta, setAbierta] = useState<string | null>(null);
-  if (!acts.length) return <p className="card muted">Todavía no hay actividades. Las que grabes aquí o subas a Strava aparecerán en esta lista.</p>;
+  if (!acts.length) return <p className="card muted">{t('act.vacio')}</p>;
 
   // Agrupamos por mes
   const meses = new Map<string, Act[]>();
@@ -58,7 +59,7 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
         return (
           <section key={k} style={{ marginBottom: 22 }}>
             <div className="sec-head">
-              <span>{ref.toLocaleDateString('es', { month: 'long', year: 'numeric' })}</span>
+              <span>{ref.toLocaleDateString(locale(), { month: 'long', year: 'numeric' })}</span>
               <span className="muted">{lista.length} · {totalKm.toFixed(1)} km</span>
             </div>
             {lista.map((a) => {
@@ -70,10 +71,10 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                 <div key={a.id} className="act">
                   <button className="act-head" onClick={() => setAbierta(abierto ? null : a.id)}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="act-title">{DEPORTE_ICONO[deporteDe(a.type)] ?? ''} {a.name ?? 'Actividad'}</div>
+                      <div className="act-title">{DEPORTE_ICONO[deporteDe(a.type)] ?? ''} {a.name ?? t('act.sinNombre')}</div>
                       <div className="muted" style={{ fontSize: 13 }}>
-                        {d.toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })} · {d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
-                        {' · '}{DEPORTE_LABEL[deporteDe(a.type)] ?? 'Correr'}
+                        {d.toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' })} · {d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}
+                        {' · '}{nombreDeporte(deporteDe(a.type))}
                         {' · '}<span className={a.source === 'strava' ? 'strava' : 'muted'}>{a.source === 'strava' ? 'Strava' : 'MyCoachRuns'}</span>
                       </div>
                     </div>
@@ -87,15 +88,15 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                     <div className="act-body">
                       <div className="stats">
                         <div><b>{km.toFixed(2)}</b><small>km</small></div>
-                        <div><b>{fmtTime(a.moving_time_s ?? 0)}</b><small>tiempo</small></div>
+                        <div><b>{fmtTime(a.moving_time_s ?? 0)}</b><small>{t('rec.tiempo')}</small></div>
                         <div><b>{fmtPace(pace)}</b><small>min/km</small></div>
                         {a.avg_hr ? <div><b>{Math.round(a.avg_hr)}</b><small>ppm</small></div> : null}
-                        {a.raw?.total_elevation_gain ? <div><b>{Math.round(a.raw.total_elevation_gain)}</b><small>m desnivel</small></div> : null}
+                        {a.raw?.total_elevation_gain ? <div><b>{Math.round(a.raw.total_elevation_gain)}</b><small>{t('act.desnivel')}</small></div> : null}
                         {a.raw?.calories ? <div><b>{Math.round(a.raw.calories)}</b><small>kcal</small></div> : null}
                       </div>
                       {(a.rpe || a.notes) && (
                         <div style={{ marginTop: 12, paddingLeft: 10, borderLeft: '3px solid var(--track)' }}>
-                          {a.rpe ? <div style={{ fontSize: 13 }}><b>Esfuerzo {a.rpe}/10</b> · {RPE_LABEL[a.rpe]}</div> : null}
+                          {a.rpe ? <div style={{ fontSize: 13 }}><b>{t('act.esfuerzo', { n: a.rpe })}</b> · {nombreRpe(a.rpe)}</div> : null}
                           {a.notes ? <div className="muted" style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>{a.notes}</div> : null}
                         </div>
                       )}
@@ -107,7 +108,7 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                         : propias && <ActivityOverlay a={a} />}
                       {a.raw?.id && a.source === 'strava' && (
                         <a className="btn ghost block" style={{ marginTop: 8, fontSize: 13, padding: '7px 14px' }}
-                          href={`https://www.strava.com/activities/${a.raw.id}`} target="_blank" rel="noopener noreferrer">Ver en Strava</a>
+                          href={`https://www.strava.com/activities/${a.raw.id}`} target="_blank" rel="noopener noreferrer">{t('act.verStrava')}</a>
                       )}
                     </div>
                   )}

@@ -6,8 +6,10 @@ import Refrescar from '@/components/Refrescar';
 import Footer from '@/components/Footer';
 import Esqueleto from '@/components/Esqueleto';
 import Cabecera from '@/components/Cabecera';
+import { useIdioma } from '@/lib/idioma';
 
 export default function RecordPage() {
+  const { t } = useIdioma();
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
     const iso = (d: Date) => d.toISOString().slice(0, 10);
     const desde = new Date(); desde.setDate(desde.getDate() - 2);
@@ -23,7 +25,7 @@ export default function RecordPage() {
   return (
     <main className="shell">
       <Refrescar />
-      <Cabecera titulo="Iniciar" frase="Graba tu sesión con GPS. Sigue midiendo con la pantalla apagada." />
+      <Cabecera titulo={t('iniciar.titulo')} frase={t('iniciar.frase')} />
       {error && <p className="notice mal">{error}</p>}
       {/* El Recorder se monta pase lo que pase con la red: el motor de
           grabación es local y una carrera en curso tiene que seguir viéndose

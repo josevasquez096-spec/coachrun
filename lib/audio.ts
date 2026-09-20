@@ -8,6 +8,8 @@
  *  - La voz del navegador se queda **colgada** tras un rato: acepta frases pero
  *    no las dice. Cancelar la cola antes de cada frase la desatasca.
  */
+import { VOZ, idioma } from './idioma';
+
 let ctx: AudioContext | null = null;
 
 export function initAudio() {
@@ -57,7 +59,8 @@ function siguiente() {
     speechSynthesis.cancel();          // desatasca la cola del navegador
     speechSynthesis.resume();
     const u = new SpeechSynthesisUtterance(frase);
-    u.lang = 'es-ES'; u.rate = 0.9; u.pitch = 1; u.volume = 1;
+    // El idioma elegido en la app: si no, el teléfono lee el inglés con acento español.
+    u.lang = VOZ[idioma()]; u.rate = 0.9; u.pitch = 1; u.volume = 1;
     let cerrado = false;
     const cerrar = () => { if (cerrado) return; cerrado = true; clearTimeout(reloj); setTimeout(siguiente, 120); };
     u.onend = cerrar; u.onerror = cerrar;

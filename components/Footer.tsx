@@ -1,4 +1,6 @@
+'use client';
 import { APOYO, CORREO, INSTAGRAM, LOGO, STRAVA_AUTOR } from '@/lib/marca';
+import { useIdioma } from '@/lib/idioma';
 
 /**
  * El pie que va en todas las pantallas.
@@ -12,20 +14,21 @@ import { APOYO, CORREO, INSTAGRAM, LOGO, STRAVA_AUTOR } from '@/lib/marca';
  * aporta nada y sí puede dar sorpresas.
  */
 export default function Footer() {
+  const { t } = useIdioma();
   return (
     <footer style={{ marginTop: 32, paddingTop: 18, borderTop: '1px solid var(--line)', textAlign: 'center' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO} alt="MyCoachRuns · Entrena, mejora, avanza" width={900} height={430} loading="lazy"
+      <img src={LOGO} alt={t('pie.lema')} width={900} height={430} loading="lazy"
         style={{ width: 168, height: 'auto', margin: '0 auto 10px', display: 'block' }} />
 
       <div style={{ display: 'flex', gap: 14, justifyContent: 'center', margin: '0 0 12px', fontSize: 13, fontWeight: 700, flexWrap: 'wrap' }}>
         <a href={STRAVA_AUTOR} target="_blank" rel="noopener noreferrer" style={{ color: '#FC4C02' }}>Strava</a>
         <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-2)' }}>Instagram</a>
-        <a href={`mailto:${CORREO}`} style={{ color: 'var(--ink-2)' }}>Escríbenos</a>
+        <a href={`mailto:${CORREO}`} style={{ color: 'var(--ink-2)' }}>{t('pie.escribenos')}</a>
       </div>
 
       <a href={APOYO} target="_blank" rel="noopener noreferrer"
-        className="btn ghost" style={{ padding: '7px 18px', fontSize: 13 }}>Apoyar el proyecto</a>
+        className="btn ghost" style={{ padding: '7px 18px', fontSize: 13 }}>{t('pie.apoyar')}</a>
 
       <p className="muted" style={{ fontSize: 11, marginTop: 12 }}>By JVasquez</p>
     </footer>

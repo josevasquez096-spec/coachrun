@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { fmtPace, fmtTime } from '@/lib/format';
 import { decodePolyline } from '@/lib/polyline';
+import { useIdioma } from '@/lib/idioma';
 
 // El canvas no entiende las variables de CSS: mismo verde de la paleta.
 const VERDE = '#94F420';
@@ -10,6 +11,7 @@ type A = { name: string | null; started_at: string; distance_m: number | null; m
 
 /** Genera una imagen cuadrada con la foto del usuario y los datos encima. */
 export default function ActivityOverlay({ a }: { a: A }) {
+  const { t } = useIdioma();
   const input = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -115,16 +117,16 @@ export default function ActivityOverlay({ a }: { a: A }) {
         onChange={(e) => { const f = e.target.files?.[0]; if (f) generar(f); }} />
       {!url ? (
         <button className="btn ghost block" onClick={() => input.current?.click()} disabled={busy}>
-          {busy ? 'Creando imagen…' : 'Crear foto con mis datos'}
+          {busy ? t('img.creandoCorto') : t('img.crearFoto')}
         </button>
       ) : (
         <>
           <img src={url} alt="" style={{ width: '100%', borderRadius: 12, border: '1px solid var(--line)' }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button className="btn flare" style={{ flex: 1 }} onClick={guardar}>Guardar o compartir</button>
-            <button className="btn ghost" onClick={() => input.current?.click()}>Otra foto</button>
+            <button className="btn flare" style={{ flex: 1 }} onClick={guardar}>{t('img.guardarCorto')}</button>
+            <button className="btn ghost" onClick={() => input.current?.click()}>{t('img.otraFoto')}</button>
           </div>
-          <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>También puedes mantener pulsada la imagen para guardarla.</p>
+          <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>{t('img.manten')}</p>
         </>
       )}
     </div>

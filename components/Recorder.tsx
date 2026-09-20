@@ -3,8 +3,9 @@ import { useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { fmtPace, fmtTime, todayLocal, deporteDe, DEPORTE_ICONO, DEPORTE_LABEL } from '@/lib/format';
-import { describe, expand, fmtAmount, fmtPaceStr, type Phase, type Step } from '@/lib/phases';
-import { zonas, zonaDe, RPE_LABEL, type Zona } from '@/lib/zones';
+import { expand, fmtAmount, fmtPaceStr, type Phase, type Step } from '@/lib/phases';
+import { locale, nombreDeporte, nombreRpe, nombreZona, t, useIdioma, describirFase, nombresPorDefecto } from '@/lib/idioma';
+import { zonas, zonaDe, type Zona } from '@/lib/zones';
 import { bleDisponible } from '@/lib/ble';
 import * as ses from '@/lib/session';
 
@@ -38,11 +39,11 @@ function ListaFases({ fases, steps, idx, activa }: { fases: Phase[]; steps: Step
     <div className="card" style={{ marginBottom: 12 }}>
       {resumible ? (
         <button className="resumen-cab" onClick={() => setAbierta(!abierta)}>
-          <span>{abierta ? 'PASO A PASO' : `ENTRENAMIENTO · ${fases.length} ${fases.length === 1 ? 'BLOQUE' : 'BLOQUES'}`}</span>
-          <span className="ver">{abierta ? 'Ver resumen ▲' : 'Ver cada repetición ▼'}</span>
+          <span>{abierta ? t('rec.pasoAPaso') : fases.length === 1 ? t('rec.unBloque') : t('rec.bloques', { n: fases.length })}</span>
+          <span className="ver">{abierta ? `${t('rec.verResumen')} ▲` : `${t('rec.verRepes')} ▼`}</span>
         </button>
       ) : (
-        <div className="resumen-cab" style={{ cursor: 'default' }}><span>ENTRENAMIENTO · {steps.length} FASES</span></div>
+        <div className="resumen-cab" style={{ cursor: 'default' }}><span>{t('rec.nFases', { n: steps.length })}</span></div>
       )}
 
       {!verPasos && fases.map((p, i) => {
@@ -55,7 +56,7 @@ function ListaFases({ fases, steps, idx, activa }: { fases: Phase[]; steps: Step
             <span className="fase-txt">
               <b>{p.name}</b>
               <small className="muted">
-                {describe(p)}
+                {describirFase(p)}
                 {ahora && total > 1 ? ` · vas por la ${Math.min(repesHechas(i) + 1, total)} de ${total}` : ''}
               </small>
             </span>
@@ -85,6 +86,7 @@ function ListaFases({ fases, steps, idx, activa }: { fases: Phase[]; steps: Step
 }
 
 export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes: Pendiente[]; hasStrava: boolean; perfil?: Perfil }) {
+  const { t } = useIdioma();
   const S = useSyncExternalStore(ses.suscribir, ses.leer, ses.leerEnServidor);
   const hoy = todayLocal();
   const delDia = pendientes.filter((p) => p.date === hoy);
@@ -103,7 +105,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
   const previo = libre ? null : elegido;
   // Antes de empezar mandan las fases del entrenamiento elegido; una vez en
   // marcha manda lo que guarda el motor, que es lo que se está corriendo.
-  const steps: Step[] = enMarcha ? S.steps : (previo?.phases ? expand(previo.phases) : []);
+  const steps: Step[] = enMarcha ? S.steps : (previo?.phases ? expand(previo.phases, nombresPorDefecto()) : []);
   const fases: Phase[] = enMarcha ? S.fases : (previo?.phases ?? []);
   const idx = enMarcha ? S.idx : 0;
 
@@ -131,7 +133,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
   function empezar() {
     ses.iniciar({
       workoutId: previo?.id ?? null,
-      titulo: previo?.title ?? DEPORTE_LABEL[deporte] ?? 'Carrera',
+      titulo: previo?.title ?? nombreDeporte(deporte),
       deporte,
       steps, fases, sonido, subirStrava: hasStrava,
     });
@@ -141,37 +143,37 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
     <div>
       {S.estado === 'idle' && (delDia.length > 0 || otros.length > 0) && (
         <div className="card" style={{ marginBottom: 12 }}>
-          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>¿QUÉ VAS A HACER?</div>
+          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t('grabar.queHacer')}</div>
           {[...delDia, ...otros].map((p) => {
             const sel = !libre && elegido?.id === p.id;
-            const fecha = new Date(p.date + 'T12:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' });
+            const fecha = new Date(p.date + 'T12:00').toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'short' });
             return (
               <button key={p.id} onClick={() => elegir(p)} className={`elige ${sel ? 'on' : ''}`}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{DEPORTE_ICONO[deporteDe(p.type)] ?? ''} {p.title} {p.completed && <span className="muted" style={{ fontWeight: 400 }}>· ya marcado</span>}</div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{DEPORTE_ICONO[deporteDe(p.type)] ?? ''} {p.title} {p.completed && <span className="muted" style={{ fontWeight: 400 }}>· {t('grabar.yaMarcado')}</span>}</div>
                 <div className="muted" style={{ fontSize: 13 }}>
-                  {p.date === hoy ? 'Hoy' : fecha}
-                  {p.phases?.length ? ` · ${expand(p.phases).length} fases` : p.target_distance_km ? ` · ${p.target_distance_km} km` : ''}
+                  {p.date === hoy ? t('grabar.hoy') : fecha}
+                  {p.phases?.length ? ` · ${t('grabar.fases', { n: expand(p.phases).length })}` : p.target_distance_km ? ` · ${p.target_distance_km} km` : ''}
                 </div>
               </button>
             );
           })}
           <button onClick={() => elegir(null)} className={`elige ${libre ? 'on' : ''}`}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>Libre</div>
-            <div className="muted" style={{ fontSize: 13 }}>Sin entrenamiento asignado</div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>{t('grabar.libre')}</div>
+            <div className="muted" style={{ fontSize: 13 }}>{t('grabar.sinAsignar')}</div>
           </button>
         </div>
       )}
 
       {S.estado === 'idle' && (
         <div className="card" style={{ marginBottom: 12 }}>
-          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>CÓMO LO VAS A HACER</div>
+          <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t('grabar.comoHacer')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {GRABABLES.map((d) => (
               <button key={d} onClick={() => { setDeporte(d); setTocado(true); }}
                 className={`elige ${deporte === d ? 'on' : ''}`}
                 style={{ flex: 1, textAlign: 'center', marginBottom: 0 }}>
                 <div style={{ fontSize: 20, lineHeight: 1.1 }}>{DEPORTE_ICONO[d]}</div>
-                <div style={{ fontWeight: 700, fontSize: 13 }}>{DEPORTE_LABEL[d]}</div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{nombreDeporte(d)}</div>
               </button>
             ))}
           </div>
@@ -180,7 +182,7 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
 
       {enMarcha && (
         <div className="card" style={{ marginBottom: 12 }}>
-          <span className="pill">{S.estado === 'paused' ? 'En pausa' : S.estado === 'running' ? 'En marcha' : 'Terminada'}</span>{' '}
+          <span className="pill">{t(S.estado === 'paused' ? 'grabar.enPausa' : S.estado === 'running' ? 'grabar.enMarcha' : 'grabar.terminada')}</span>{' '}
           <b>{DEPORTE_ICONO[deporteActual] ?? ''} {S.titulo}</b>
         </div>
       )}
@@ -206,19 +208,19 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
           )}
           {zonaObjetivo && S.hr && (
             <div style={{ marginTop: 6, fontWeight: 700, fontSize: 14, color: S.hr >= zonaObjetivo.min && S.hr <= zonaObjetivo.max ? 'var(--verde-txt)' : 'var(--alerta)' }}>
-              {S.hr >= zonaObjetivo.min && S.hr <= zonaObjetivo.max ? '✓ En zona' : S.hr > zonaObjetivo.max ? '▲ Pulso alto' : '▼ Pulso bajo'} · {S.hr} ppm
+              {S.hr >= zonaObjetivo.min && S.hr <= zonaObjetivo.max ? `✓ ${t('rec.enZona')}` : S.hr > zonaObjetivo.max ? `▲ ${t('rec.pulsoAlto')}` : `▼ ${t('rec.pulsoBajo')}`} · {S.hr} ppm
             </div>
           )}
           {(S.estado === 'running' || S.estado === 'paused') && (
-            <button className="btn ghost block" style={{ marginTop: 10, padding: '6px 12px', fontSize: 13 }} onClick={ses.saltarFase}>Saltar a la siguiente fase</button>
+            <button className="btn ghost block" style={{ marginTop: 10, padding: '6px 12px', fontSize: 13 }} onClick={ses.saltarFase}>{t('rec.saltarFase')}</button>
           )}
         </div>
       )}
 
       {steps.length > 0 && S.estado !== 'idle' && idx >= steps.length && (
         <div className="card" style={{ marginBottom: 12, borderColor: 'var(--verde-txt)', borderWidth: 2 }}>
-          <b>Entrenamiento completado.</b>
-          <div className="muted" style={{ fontSize: 14 }}>Puedes seguir corriendo o pulsar Terminar.</div>
+          <b>{t('rec.completado')}</b>
+          <div className="muted" style={{ fontSize: 14 }}>{t('rec.completadoDesc')}</div>
         </div>
       )}
 
@@ -228,20 +230,20 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
 
       <div className="metrics">
         <div className="metric"><b>{(S.dist / 1000).toFixed(2)}</b><small>km</small></div>
-        <div className="metric"><b>{fmtTime(S.elapsed)}</b><small>tiempo</small></div>
+        <div className="metric"><b>{fmtTime(S.elapsed)}</b><small>{t('rec.tiempo')}</small></div>
         <div className="metric"><b>{fmtPace(pace)}</b><small>min/km</small></div>
       </div>
 
       {S.hr && (
         <div className="metric" style={{ marginBottom: 10, borderColor: zonaActual?.color ?? 'var(--line)' }}>
           <b style={{ color: zonaActual?.color }}>{S.hr}</b>
-          <small>ppm {zonaActual ? `· zona ${zonaActual.n} ${zonaActual.nombre}` : ''}</small>
+          <small>ppm {zonaActual ? t('rec.zonaPpm', { n: zonaActual.n, nombre: nombreZona(zonaActual.n) }) : ''}</small>
         </div>
       )}
 
       {(S.estado === 'running' || S.estado === 'paused') && S.gpsAcc != null && (
         <p className="muted" style={{ fontSize: 12, textAlign: 'center', marginTop: -4 }}>
-          Precisión GPS: ±{S.gpsAcc} m {S.gpsAcc > 25 ? '— señal débil, la distancia puede quedarse corta' : ''}
+          {t('rec.precision', { m: S.gpsAcc })} {S.gpsAcc > 25 ? t('rec.senalDebil') : ''}
         </p>
       )}
 
@@ -249,55 +251,55 @@ export default function Recorder({ pendientes, hasStrava, perfil }: { pendientes
         {S.estado === 'idle' && <>
           <label className="check">
             <input type="checkbox" checked={sonido} onChange={(e) => setSonido(e.target.checked)} />
-            Avisos por voz y sonido en cada kilómetro
+            {t('rec.avisosVoz')}
           </label>
           {bleDisponible() && (
             <button className="btn ghost block" onClick={ses.conectarSensor}>
-              {S.sensor ? `Sensor: ${S.sensor}` : 'Conectar cinturón de pulso'}
+              {S.sensor ? t('rec.sensor', { n: S.sensor }) : t('rec.conectarPulso')}
             </button>
           )}
           <button className="btn go block" onClick={empezar}>
-            {steps.length ? `Iniciar entrenamiento (${steps.length} fases)` : 'Iniciar carrera libre'}
+            {steps.length ? t('rec.iniciarEntreno', { n: steps.length }) : t('rec.iniciarLibre')}
           </button>
         </>}
 
-        {S.estado === 'running' && <button className="btn block" onClick={ses.pausar}>Pausar</button>}
+        {S.estado === 'running' && <button className="btn block" onClick={ses.pausar}>{t('rec.pausar')}</button>}
 
         {S.estado === 'paused' && <>
-          <button className="btn go block" onClick={ses.continuar}>Continuar</button>
-          <button className="btn stop block" onClick={ses.terminar}>Terminar</button>
+          <button className="btn go block" onClick={ses.continuar}>{t('rec.continuar')}</button>
+          <button className="btn stop block" onClick={ses.terminar}>{t('rec.terminar')}</button>
         </>}
 
         {S.estado === 'done' && <>
           <div className="card">
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>¿Cómo se sintió?</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{t('rec.comoSintio')}</div>
             <div className="rpe">
               {[1,2,3,4,5,6,7,8,9,10].map((n) => (
                 <button key={n} className={S.rpe === n ? 'on' : ''} onClick={() => ses.ponerRpe(S.rpe === n ? null : n)}>{n}</button>
               ))}
             </div>
-            <div className="muted" style={{ fontSize: 13, minHeight: 18 }}>{S.rpe ? `${S.rpe} · ${RPE_LABEL[S.rpe]}` : 'Esfuerzo percibido (opcional)'}</div>
+            <div className="muted" style={{ fontSize: 13, minHeight: 18 }}>{S.rpe ? `${S.rpe} · ${nombreRpe(S.rpe)}` : t('rec.rpeVacio')}</div>
             <div className="field" style={{ marginTop: 10 }}>
-              <textarea rows={2} value={S.notas} onChange={(e) => ses.ponerNotas(e.target.value)} placeholder="Notas para tu entrenador (opcional)" />
+              <textarea rows={2} value={S.notas} onChange={(e) => ses.ponerNotas(e.target.value)} placeholder={t('rec.notasPista')} />
             </div>
             {hasStrava && (
               <label className="check">
                 <input type="checkbox" checked={S.subirStrava} onChange={(e) => ses.ponerStrava(e.target.checked)} />
-                Subir también a Strava
+                {t('rec.subirStrava')}
               </label>
             )}
           </div>
           <button className="btn flare block" onClick={() => ses.guardar(hasStrava)} disabled={S.pts.length < 2}>
-            {hasStrava && S.subirStrava ? 'Guardar y subir a Strava' : 'Guardar solo en MyCoachRuns'}
+            {hasStrava && S.subirStrava ? t('rec.guardarStrava') : t('rec.guardarSolo')}
           </button>
-          <button className="btn ghost block" onClick={() => { if (confirm('¿Descartar esta carrera? No se podrá recuperar.')) ses.descartar(); }}>Descartar</button>
+          <button className="btn ghost block" onClick={() => { if (confirm(t('rec.descartarPregunta'))) ses.descartar(); }}>{t('rec.descartar')}</button>
         </>}
 
-        {S.estado === 'saving' && <button className="btn block" disabled>Guardando…</button>}
+        {S.estado === 'saving' && <button className="btn block" disabled>{t('rec.guardando')}</button>}
 
         {S.estado === 'saved' && <>
-          <Link className="btn block" href="/activities">Ver mis actividades</Link>
-          <button className="btn ghost block" onClick={ses.descartar}>Grabar otra</button>
+          <Link className="btn block" href="/activities">{t('rec.verActividades')}</Link>
+          <button className="btn ghost block" onClick={ses.descartar}>{t('rec.grabarOtra')}</button>
         </>}
       </div>
 

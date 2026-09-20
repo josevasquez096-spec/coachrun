@@ -13,6 +13,7 @@ import Footer from '@/components/Footer';
 import Refrescar from '@/components/Refrescar';
 import Avatar from '@/components/Avatar';
 import Esqueleto from '@/components/Esqueleto';
+import { useIdioma } from '@/lib/idioma';
 
 /**
  * La ficha de un alumno.
@@ -23,6 +24,7 @@ import Esqueleto from '@/components/Esqueleto';
  * compilar.
  */
 export default function Alumno() {
+  const { t } = useIdioma();
   const r = useRouter();
   const q = useSearchParams();
   const id = q.get('id') ?? '';
@@ -65,22 +67,22 @@ export default function Alumno() {
               <h1 style={{ margin: 0, fontSize: 28 }}>{a?.full_name}</h1>
               <span className="estado">
                 <i className="punto-estado" style={a?.strava_athlete_id ? { background: '#FC4C02' } : undefined} />
-                {a?.strava_athlete_id ? 'Strava conectado' : 'Sin Strava'}
+                {t(a?.strava_athlete_id ? 'alumno.stravaOk' : 'alumno.sinStrava')}
               </span>
             </div>
           </div>
 
           <div className="tabs">
-            <Link href={`/coach/alumno?id=${id}`} className={ver === 'plan' ? 'on' : ''}>Plan</Link>
-            <Link href={`/coach/alumno?id=${id}&ver=actividades`} className={ver === 'actividades' ? 'on' : ''}>Actividades</Link>
+            <Link href={`/coach/alumno?id=${id}`} className={ver === 'plan' ? 'on' : ''}>{t('tab.plan')}</Link>
+            <Link href={`/coach/alumno?id=${id}&ver=actividades`} className={ver === 'actividades' ? 'on' : ''}>{t('tab.actividades')}</Link>
           </div>
 
           {ver === 'plan' ? (
             <>
               <PegarEntreno athleteId={id} nombre={(a?.full_name ?? 'este alumno').split(' ')[0]} />
-              <h2>Asignar entrenamiento</h2>
+              <h2>{t('alumno.asignar')}</h2>
               <WorkoutForm athleteId={id} />
-              <h2>Plan</h2>
+              <h2>{t('tab.plan')}</h2>
               <Plan workouts={datos.workouts as any} editable athleteId={id} nombre={a?.full_name ?? 'otro alumno'} />
             </>
           ) : (
