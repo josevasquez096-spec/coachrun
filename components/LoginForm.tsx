@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import Footer from './Footer';
-import { pedir, motivoDeFallo } from '@/lib/api';
+import { pedir, motivoDeFallo, dominioPublico, enLaApp } from '@/lib/api';
 
 type Mode = 'signin' | 'signup' | 'magic';
 
@@ -23,7 +23,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
       } else if (mode === 'signup') {
         const { error } = await sb.auth.signUp({
           email, password: pass,
-          options: { data: { full_name: name, coach_code: coach }, emailRedirectTo: `${location.origin}/auth/callback` },
+          options: { data: { full_name: name, coach_code: coach }, emailRedirectTo: `${dominioPublico()}/auth/callback` },
         });
         if (error) throw error;
         const { data } = await sb.auth.getSession();
@@ -36,7 +36,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
         } else setMsg('Cuenta creada. Revisa tu correo para confirmarla y luego entra con tu contraseña.');
       } else {
         const { error } = await sb.auth.signInWithOtp({
-          email, options: { emailRedirectTo: `${location.origin}/auth/callback`, data: { full_name: name, coach_code: coach } },
+          email, options: { emailRedirectTo: `${dominioPublico()}/auth/callback`, data: { full_name: name, coach_code: coach } },
         });
         if (error) throw error;
         setMsg('Te enviamos un enlace al correo.');
@@ -113,14 +113,10 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
           {busy ? 'Un momento…' : mode === 'signin' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace'}
         </button>
 
-        {mode === 'signin' && (
-          <p className="muted" style={{ fontSize: 13, marginTop: 12, textAlign: 'center' }}>
-            ¿Entraste antes con enlace mágico? Crea una contraseña desde «Cuenta» para poder entrar en cualquier dispositivo.
-          </p>
-        )}
       </div>
 
-      <p className="muted" style={{ fontSize: 13, marginTop: 20 }}>Para instalarla: en el navegador toca «Compartir» → «Añadir a pantalla de inicio».</p>
+      {/* Dentro del APK la app ya está instalada: el consejo sobraba. */}
+      {!enLaApp() && <p className="muted" style={{ fontSize: 13, marginTop: 20 }}>Para instalarla: en el navegador toca «Compartir» → «Añadir a pantalla de inicio».</p>}
       <Footer />
     </main>
   );

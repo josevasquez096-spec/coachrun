@@ -22,6 +22,17 @@ export const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 export const enLaApp = () =>
   typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
 
+/**
+ * La dirección pública de la app, la que se puede mandar a alguien.
+ *
+ * Dentro del APK `location.origin` es `https://localhost`, que es la dirección
+ * interna del teléfono: un enlace de invitación con eso no le sirve a nadie, y
+ * un correo de confirmación que apunte ahí no lleva a ninguna parte. Por eso
+ * se usa la dirección del servidor cuando la hay.
+ */
+export const dominioPublico = () =>
+  BASE || (typeof window !== 'undefined' ? location.origin : '');
+
 export async function pedir(ruta: string, opciones: RequestInit = {}) {
   const cab = new Headers(opciones.headers);
   // La sesión solo hace falta adjuntarla cuando no hay cookies que valgan.

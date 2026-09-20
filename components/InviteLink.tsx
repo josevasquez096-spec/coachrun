@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { IcoInvitar, IcoEnlace } from './Iconos';
+import { dominioPublico } from '@/lib/api';
 
 export default function InviteLink({ coachId }: { coachId: string }) {
   const [copied, setCopied] = useState(false);
-  const link = typeof window !== 'undefined' ? `${location.origin}/?coach=${coachId}` : '';
+  const link = `${dominioPublico()}/?coach=${coachId}`;
 
   async function copy() {
     try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch {}

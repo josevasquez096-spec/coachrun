@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { Archivo } from 'next/font/google';
 import './globals.css';
 import SW from '@/components/SW';
-import PuenteNativo from '@/components/PuenteNativo';
 
 // La fuente se sirve desde el propio dominio. Antes venía con un <link> a Google
 // Fonts que bloqueaba el primer dibujado de cada pantalla.
@@ -19,6 +18,6 @@ export const viewport: Viewport = { themeColor: '#0B0D0B', width: 'device-width'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={archivo.variable}><body>{children}<SW /><PuenteNativo /></body></html>
+    <html lang="es" className={archivo.variable}><body>{children}<SW /></body></html>
   );
 }
