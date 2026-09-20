@@ -1,4 +1,4 @@
-import { APOYO, CORREO, INSTAGRAM, LOGO, STRAVA_COACH } from '@/lib/marca';
+import { APOYO, CORREO, INSTAGRAM, LOGO, STRAVA_AUTOR } from '@/lib/marca';
 
 /**
  * El pie que va en todas las pantallas.
@@ -19,7 +19,7 @@ export default function Footer() {
         style={{ width: 168, height: 'auto', margin: '0 auto 10px', display: 'block' }} />
 
       <div style={{ display: 'flex', gap: 14, justifyContent: 'center', margin: '0 0 12px', fontSize: 13, fontWeight: 700, flexWrap: 'wrap' }}>
-        <a href={STRAVA_COACH} target="_blank" rel="noopener noreferrer" style={{ color: '#FC4C02' }}>Strava</a>
+        <a href={STRAVA_AUTOR} target="_blank" rel="noopener noreferrer" style={{ color: '#FC4C02' }}>Strava</a>
         <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink-2)' }}>Instagram</a>
         <a href={`mailto:${CORREO}`} style={{ color: 'var(--ink-2)' }}>Escríbenos</a>
       </div>

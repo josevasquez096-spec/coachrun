@@ -1,7 +1,12 @@
 /** Datos de la marca, en un solo sitio para no repetirlos por ahí sueltos. */
 export const CORREO = 'mycoachruns@gmail.com';
 export const INSTAGRAM = 'https://instagram.com/mycoachruns';
-export const STRAVA_COACH = 'https://www.strava.com/athletes/145304552';
+/**
+ * El Strava de JVasquez **como autor de la app**, no como entrenador.
+ * Se llama así a propósito: si mañana otro coach usa MyCoachRuns, este enlace
+ * sigue siendo el del desarrollador, no el suyo.
+ */
+export const STRAVA_AUTOR = 'https://www.strava.com/athletes/145304552';
 export const APOYO = 'https://paypal.me/JoseV2403';
 
 /** WhatsApp del entrenador. El enlace `wa.me` va sin +, sin espacios ni guiones. */

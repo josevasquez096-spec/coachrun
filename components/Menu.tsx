@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LOGO, INSTAGRAM, STRAVA_COACH, CORREO, APOYO } from '@/lib/marca';
+import { LOGO, INSTAGRAM, STRAVA_AUTOR, CORREO, APOYO } from '@/lib/marca';
 
 /**
  * El menú que se desliza desde la derecha.
@@ -52,7 +52,7 @@ export default function Menu() {
           <Link href="/athlete/settings"><b>Cuenta</b><small>Tu perfil, pulso y Strava</small></Link>
           <a href={`mailto:${CORREO}`}><b>Escríbenos</b><small>{CORREO}</small></a>
           <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer"><b>Instagram</b><small>@mycoachruns</small></a>
-          <a href={STRAVA_COACH} target="_blank" rel="noopener noreferrer"><b>Strava</b><small>Sigue al entrenador</small></a>
+          <a href={STRAVA_AUTOR} target="_blank" rel="noopener noreferrer"><b>Strava</b><small>Sigue al desarrollador</small></a>
           <a href={APOYO} target="_blank" rel="noopener noreferrer"><b>Apoyar el proyecto</b><small>Invítame un café</small></a>
         </nav>
 
