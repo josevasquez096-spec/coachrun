@@ -81,7 +81,13 @@ h2 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; letter-spacing: -.0
 .field label { font-size: 13px; color: var(--ink-2); }
 .field input, .field select, .field textarea { padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; width: 100%; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--verde-txt); outline-offset: 1px; border-color: transparent; }
+/* Dos columnas. El `min-width: 0` es imprescindible: por defecto una celda de
+   rejilla no se encoge por debajo de su contenido, y el selector de fecha del
+   teléfono es ancho de por sí, así que la fila se salía por la derecha y
+   dejaba "Tipo" cortado. */
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row > * { min-width: 0; }
+.field input, .field select { max-width: 100%; }
 
 /* Plan del atleta: una línea de tiempo vertical con el día como marcador */
 .plan { display: grid; gap: 0; }

@@ -4,8 +4,12 @@ import { MUSCULOS, NOMBRE, ANCHO, EJE, MANCHAS, lados, type Cara } from '@/lib/m
 /**
  * El selector de músculos: los dos cuerpos más la lista de nombres.
  *
- * El cuerpo es **el dibujo del propio proyecto** (`public/musculos/`). Dibujarlo
- * a mano con formas se intentó y quedaba como un robot con pegatinas.
+ * El cuerpo es **el dibujo del propio proyecto** (`public/musculos/`), con su
+ * fondo oscuro tal cual. Dibujarlo a mano con formas se intentó y quedaba como
+ * un robot con pegatinas; y recortarle el fondo para dejarlo transparente
+ * dejaba jirones grises entre las piernas, porque la sombra de ahí es tan
+ * oscura como el fondo y no hay umbral que las separe bien. Con el fondo
+ * puesto no hay recorte que pueda salir mal.
  *
  * Dos cosas que hacen que se pueda usar de verdad:
  *  - Las zonas que se pueden tocar se ven siempre, en punteado. Sin eso hay
@@ -34,7 +38,7 @@ export default function MapaMusculos({
 
     return (
       <svg key={c} viewBox={`0 0 ${w} 400`} height={alto} width={(alto * w) / 400}
-        role="img" aria-label={`Cuerpo de ${c}`} style={{ touchAction: 'manipulation', overflow: 'visible' }}>
+        role="img" aria-label={`Cuerpo de ${c}`} style={{ touchAction: 'manipulation', display: 'block' }}>
         <defs>
           <filter id={`${id}-${c}-halo`} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="5" />
@@ -52,10 +56,10 @@ export default function MapaMusculos({
                   fill={ROJO_MUSCULO} opacity={0.45} filter={`url(#${id}-${c}-halo)`} />}
                 <ellipse cx={cx} cy={f.cy} rx={f.rx} ry={f.ry}
                   fill={on ? ROJO_MUSCULO : 'transparent'} fillOpacity={on ? 0.5 : 1}
-                  stroke={on ? ROJO_MUSCULO : '#9AA29A'}
+                  stroke={on ? ROJO_MUSCULO : '#8E978E'}
                   strokeWidth={on ? 1.4 : 1}
                   strokeDasharray={on ? undefined : '3 3'}
-                  strokeOpacity={on ? 0.9 : (vivo ? 0.55 : 0)}
+                  strokeOpacity={on ? 0.95 : (vivo ? 0.5 : 0)}
                   style={vivo ? { cursor: 'pointer' } : undefined}
                   onClick={alTocar ? () => alTocar(m.id) : undefined}>
                   <title>{m.nombre}</title>
@@ -69,9 +73,11 @@ export default function MapaMusculos({
 
   return (
     <div>
+      {/* Caja oscura: el dibujo trae su propio fondo negro y así se funde con
+          ella en vez de recortarse contra una tarjeta blanca. */}
       <div style={{
-        display: 'flex', gap: 4, justifyContent: 'center', alignItems: 'flex-start',
-        background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14, padding: '10px 4px',
+        display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'flex-start',
+        background: '#0B0D0B', borderRadius: 16, padding: '8px 4px', overflow: 'hidden',
       }}>
         {/* Espalda a la izquierda y frente a la derecha, como en el dibujo original. */}
         {cara('espalda')}{cara('frente')}
