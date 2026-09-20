@@ -6,6 +6,7 @@ import TabBar from '@/components/TabBar';
 import Footer from '@/components/Footer';
 import Refrescar from '@/components/Refrescar';
 import Esqueleto from '@/components/Esqueleto';
+import Cabecera from '@/components/Cabecera';
 
 export default function AthleteHome() {
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
@@ -18,8 +19,8 @@ export default function AthleteHome() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{perfil?.full_name}</span></div>
-      <h1>Mi plan</h1>
+      <Cabecera titulo="Mi plan" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
+        frase="Lo que toca esta semana. Marca lo hecho y sal a correr." />
       {error && <p className="notice">{error}</p>}
       {cargando ? <Esqueleto /> : !datos ? null : (
         <>

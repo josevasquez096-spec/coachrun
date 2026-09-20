@@ -6,6 +6,7 @@ import TabBar from '@/components/TabBar';
 import Footer from '@/components/Footer';
 import Refrescar from '@/components/Refrescar';
 import Esqueleto from '@/components/Esqueleto';
+import Cabecera from '@/components/Cabecera';
 
 export default function ActivitiesPage() {
   const { sesion, datos, cargando, error } = usePantalla(async (sb, s) => {
@@ -18,11 +19,8 @@ export default function ActivitiesPage() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar">
-        <div className="brand">MyCoach<span>Runs</span></div>
-        <span className="muted">{datos ? `${datos.total.toFixed(0)} km en total` : ''}</span>
-      </div>
-      <h1>Actividades</h1>
+      <Cabecera titulo="Actividades" dato={datos ? `${datos.total.toFixed(0)} km` : undefined}
+        frase="Todo lo que has corrido, caminado y entrenado." />
       {error && <p className="notice">{error}</p>}
       {cargando ? <Esqueleto /> : datos ? <Activities acts={datos.lista} /> : null}
       <Footer />

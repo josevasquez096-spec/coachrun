@@ -5,6 +5,7 @@ import TabBar from '@/components/TabBar';
 import Refrescar from '@/components/Refrescar';
 import Footer from '@/components/Footer';
 import Esqueleto from '@/components/Esqueleto';
+import Cabecera from '@/components/Cabecera';
 
 export default function RecordPage() {
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
@@ -13,7 +14,7 @@ export default function RecordPage() {
     const hasta = new Date(); hasta.setDate(hasta.getDate() + 2);
     const data = pedirDatos(await sb.from('workouts')
       .select('id,date,title,target_distance_km,target_pace,phases,completed,type')
-      .eq('athlete_id', s.user.id).gte('date', iso(desde)).lte('date', iso(hasta)).neq('type', 'rest').order('date'));
+      .eq('athlete_id', s.user.id).gte('date', iso(desde)).lte('date', iso(hasta)).not('type', 'in', '(rest,strength)').order('date'));
     return data ?? [];
   // `cache` los guarda en el teléfono: en la calle sin cobertura hay que poder
   // salir a hacer el entrenamiento del día igual.
@@ -22,7 +23,7 @@ export default function RecordPage() {
   return (
     <main className="shell">
       <Refrescar />
-      <h1>Iniciar</h1>
+      <Cabecera titulo="Iniciar" frase="Graba tu sesión con GPS. Sigue midiendo con la pantalla apagada." />
       {error && <p className="notice">{error}</p>}
       {/* El Recorder se monta pase lo que pase con la red: el motor de
           grabación es local y una carrera en curso tiene que seguir viéndose

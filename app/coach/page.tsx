@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { usePantalla, pedirDatos } from '@/lib/pantalla';
+import { todayLocal } from '@/lib/format';
 import TabBar from '@/components/TabBar';
 import Footer from '@/components/Footer';
 import InviteLink from '@/components/InviteLink';
@@ -10,13 +11,26 @@ import AvisoCopiado from '@/components/AvisoCopiado';
 import Avatar from '@/components/Avatar';
 import Refrescar from '@/components/Refrescar';
 import Esqueleto from '@/components/Esqueleto';
+import Cabecera from '@/components/Cabecera';
+import { IcoFlecha } from '@/components/Iconos';
 
 export default function Coach() {
   const r = useRouter();
   const { sesion, perfil, datos, cargando, error } = usePantalla(async (sb, s) => {
-    const data = pedirDatos(await sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id')
-      .eq('coach_id', s.user.id).order('full_name'));
-    return data ?? [];
+    const hoy = todayLocal();
+    const [rAlumnos, rYo, rPlanes] = await Promise.all([
+      sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id').eq('coach_id', s.user.id).order('full_name'),
+      // El coach también entrena: su propia ficha va la primera.
+      sb.from('profiles').select('id,full_name,avatar_url,strava_athlete_id').eq('id', s.user.id).maybeSingle(),
+      // Quién tiene algo pendiente de aquí en adelante. Una sola consulta para
+      // todos en vez de una por alumno.
+      sb.from('workouts').select('athlete_id').eq('coach_id', s.user.id).gte('date', hoy).neq('type', 'rest').limit(500),
+    ]);
+    const alumnos = pedirDatos(rAlumnos) ?? [];
+    if (rYo.error) throw new Error(rYo.error.message);
+    const planes = new Set((pedirDatos(rPlanes) ?? []).map((w: any) => w.athlete_id));
+    const lista = [...(rYo.data && !alumnos.some((a: any) => a.id === rYo.data!.id) ? [rYo.data] : []), ...alumnos];
+    return lista.map((a: any) => ({ ...a, con_plan: planes.has(a.id) }));
   });
 
   // Esta pantalla es solo del entrenador; un atleta que llegue aquí se va a su plan.
@@ -25,23 +39,36 @@ export default function Coach() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar"><div className="brand">MyCoach<span>Runs</span></div><span className="muted">{perfil?.full_name}</span></div>
-      <h1>Alumnos</h1>
+      <Cabecera titulo="Alumnos" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
+        frase="Gestiona tus atletas, crea planes y lleva su progreso al siguiente nivel." />
       {error && <p className="notice">{error}</p>}
       {cargando ? <Esqueleto /> : !datos || !sesion ? null : (
         <>
           <InviteLink coachId={sesion.user.id} />
           <AvisoCopiado />
           <div className="athlete-list">
-            {datos.length ? datos.map((a: any) => (
-              <Link key={a.id} href={`/coach/alumno?id=${a.id}`}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Avatar url={a.avatar_url} name={a.full_name} size={40} />
-                  <span className="name">{a.full_name || 'Sin nombre'}</span>
-                </span>
-                <span className="strava">{a.strava_athlete_id ? 'Strava' : ''}</span>
-              </Link>
-            )) : <p className="card">Aún no tienes alumnos. Comparte tu enlace de invitación.</p>}
+            {datos.length ? datos.map((a: any) => {
+              // El coach también entrena, así que su propia ficha va destacada arriba.
+              const soyYo = a.id === sesion.user.id;
+              return (
+                <Link key={a.id} href={`/coach/alumno?id=${a.id}`} className={soyYo ? 'yo' : ''}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <Avatar url={a.avatar_url} name={a.full_name} size={44} />
+                    <span style={{ minWidth: 0 }}>
+                      <span className="name" style={{ display: 'block' }}>{a.full_name || 'Sin nombre'}</span>
+                      <span className="estado">
+                        <i className="punto-estado" />
+                        {a.con_plan ? 'En entrenamiento' : 'Sin plan'}
+                      </span>
+                    </span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {a.strava_athlete_id ? <span className="strava">Strava</span> : null}
+                    <IcoFlecha />
+                  </span>
+                </Link>
+              );
+            }) : <p className="card">Aún no tienes alumnos. Comparte tu enlace de invitación.</p>}
           </div>
         </>
       )}

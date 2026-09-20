@@ -32,9 +32,13 @@ export const DEPORTE_LABEL: Record<string, string> = {
   run: 'Correr', walk: 'Caminata', trail: 'Trail', strength: 'Fuerza', rest: 'Descanso',
 };
 
-/** Un emoji por deporte, para distinguirlos de un vistazo en las listas. */
+/**
+ * Se probó con emojis y se quitaron: cada teléfono los dibuja distinto y al
+ * lado de los iconos de línea de la barra quedaban como pegatinas de colores.
+ * El nombre del deporte ya se lee al lado, que es lo que hace falta.
+ */
 export const DEPORTE_ICONO: Record<string, string> = {
-  run: '🏃', walk: '🚶', trail: '⛰️', strength: '💪', rest: '😴',
+  run: '', walk: '', trail: '', strength: '', rest: '',
 };
 
 /** El deporte de una actividad ya grabada, con los valores viejos a salvo. */

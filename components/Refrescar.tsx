@@ -55,12 +55,7 @@ export default function Refrescar() {
       }}>
         {cargando ? 'Actualizando…' : tiro >= UMBRAL ? 'Suelta para actualizar' : tiro > 0 ? 'Tira para actualizar' : ''}
       </div>
-      <button onClick={actualizar} aria-label="Actualizar" title="Actualizar"
-        style={{
-          position: 'fixed', right: 14, bottom: 78, zIndex: 40, width: 44, height: 44, borderRadius: '50%',
-          border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', cursor: 'pointer',
-          boxShadow: '0 2px 10px rgba(0,0,0,.10)', fontSize: 18,
-        }}>
+      <button onClick={actualizar} aria-label="Actualizar" title="Actualizar" className="btn-refrescar">
         <span style={{ display: 'inline-block', transition: 'transform .6s', transform: cargando ? 'rotate(360deg)' : 'none' }}>⟳</span>
       </button>
     </>

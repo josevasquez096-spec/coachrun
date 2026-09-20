@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { IcoInvitar, IcoEnlace } from './Iconos';
 
 export default function InviteLink({ coachId }: { coachId: string }) {
   const [copied, setCopied] = useState(false);
@@ -15,14 +16,21 @@ export default function InviteLink({ coachId }: { coachId: string }) {
   }
 
   return (
-    <div className="card" style={{ marginBottom: 14 }}>
-      <div style={{ fontWeight: 700, fontSize: 15 }}>Invitar alumnos</div>
-      <p className="muted" style={{ fontSize: 13, margin: '4px 0 10px' }}>Manda este enlace por WhatsApp. Quien lo abra queda en tu grupo al crear su cuenta, sin pegar códigos.</p>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button className="btn flare" style={{ flex: 1 }} onClick={share}>Compartir enlace</button>
-        <button className="btn ghost" onClick={copy}>{copied ? '¡Copiado!' : 'Copiar'}</button>
+    <div className="card-oscura" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+        <span className="icono"><IcoInvitar /></span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="titulo">Invitar alumnos</div>
+          <p className="desc">Comparte el enlace y empieza a construir grandes resultados.</p>
+        </div>
+        <button className="btn-lima-borde" onClick={share}>
+          <IcoEnlace />{copied ? 'Copiado' : 'Copiar'}
+        </button>
       </div>
-      <p className="muted" style={{ fontSize: 11, marginTop: 8, wordBreak: 'break-all' }}>{link}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, color: '#9FB295', fontSize: 11.5, minWidth: 0 }}>
+        <IcoEnlace />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link}</span>
+      </div>
     </div>
   );
 }
