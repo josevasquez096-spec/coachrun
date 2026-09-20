@@ -62,7 +62,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
       <p className="muted" style={{ marginTop: 4 }}>Tu entrenador te pone el plan. Tú sales a correr.</p>
 
       {fallo && (
-        <div className="notice" style={{ marginTop: 20, fontSize: 14 }}>
+        <div className="notice mal" style={{ marginTop: 20, fontSize: 14 }}>
           <b>No se pudo comprobar tu sesión.</b><br />{fallo}
         </div>
       )}
@@ -106,7 +106,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
             <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="Mínimo 6 caracteres" /></div>
         )}
 
-        {err && <p className="notice">{err}</p>}
+        {err && <p className="notice mal">{err}</p>}
         {msg && <p className="muted" style={{ fontSize: 14 }}>{msg}</p>}
 
         <button className="btn flare block" onClick={submit} disabled={busy || !email || (mode !== 'magic' && pass.length < 6)}>

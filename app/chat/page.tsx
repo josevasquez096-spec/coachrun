@@ -6,6 +6,8 @@ import Chat from '@/components/Chat';
 import TabBar from '@/components/TabBar';
 import Avatar from '@/components/Avatar';
 import Esqueleto from '@/components/Esqueleto';
+import Cabecera from '@/components/Cabecera';
+import { IcoFlecha } from '@/components/Iconos';
 
 export default function ChatPage() {
   const atleta = useSearchParams().get('atleta');
@@ -39,13 +41,16 @@ export default function ChatPage() {
 
   const rol = perfil?.role === 'coach' ? 'coach' : 'athlete';
 
-  if (error) return <main className="shell"><h1>Mensajes</h1><p className="notice">{error}</p><TabBar role={rol} /></main>;
-  if (cargando) return <main className="shell"><h1>Mensajes</h1><Esqueleto /><TabBar role={rol} /></main>;
-  if (!datos || !sesion) return <main className="shell"><h1>Mensajes</h1><p className="notice">No se pudieron cargar los mensajes. Necesitan conexión.</p><TabBar role={rol} /></main>;
+  const cab = <Cabecera titulo="Mensajes" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
+    frase={rol === 'coach' ? 'Habla con tus alumnos, resuelve dudas y ajusta el plan.' : 'Escríbele a tu entrenador cuando lo necesites.'} />;
+
+  if (error) return <main className="shell">{cab}<p className="notice mal">{error}</p><TabBar role={rol} /></main>;
+  if (cargando) return <main className="shell">{cab}<Esqueleto /><TabBar role={rol} /></main>;
+  if (!datos || !sesion) return <main className="shell">{cab}<p className="notice">No se pudieron cargar los mensajes. Necesitan conexión.</p><TabBar role={rol} /></main>;
 
   if (datos.modo === 'sin-coach') return (
     <main className="shell">
-      <h1>Mensajes</h1>
+      {cab}
       <p className="card muted">Todavía no estás vinculado a un entrenador, así que no hay con quién conversar.</p>
       <TabBar role="athlete" />
     </main>
@@ -53,17 +58,26 @@ export default function ChatPage() {
 
   if (datos.modo === 'lista') return (
     <main className="shell">
-      <h1>Mensajes</h1>
+      {cab}
       <div className="athlete-list">
-        {datos.alumnos.length ? datos.alumnos.map((a: any) => (
-          <Link key={a.id} href={`/chat?atleta=${a.id}`}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Avatar url={a.avatar_url} name={a.full_name} size={40} />
-              <span className="name">{a.full_name || 'Sin nombre'}</span>
-            </span>
-            {datos.sinLeer[a.id] ? <span className="sin-leer">{datos.sinLeer[a.id]}</span> : <span className="muted">›</span>}
-          </Link>
-        )) : <p className="card muted">Aún no tienes alumnos.</p>}
+        {datos.alumnos.length ? datos.alumnos.map((a: any) => {
+          const nuevos = datos.sinLeer[a.id] ?? 0;
+          return (
+            <Link key={a.id} href={`/chat?atleta=${a.id}`} className={nuevos ? 'yo' : ''}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                <Avatar url={a.avatar_url} name={a.full_name} size={44} />
+                <span style={{ minWidth: 0 }}>
+                  <span className="name" style={{ display: 'block' }}>{a.full_name || 'Sin nombre'}</span>
+                  <span className="estado">{nuevos ? `${nuevos} sin leer` : 'Al día'}</span>
+                </span>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                {nuevos ? <span className="sin-leer">{nuevos}</span> : null}
+                <IcoFlecha />
+              </span>
+            </Link>
+          );
+        }) : <p className="card muted">Aún no tienes alumnos.</p>}
       </div>
       <TabBar role="coach" />
     </main>

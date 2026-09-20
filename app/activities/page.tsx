@@ -21,7 +21,7 @@ export default function ActivitiesPage() {
       <Refrescar />
       <Cabecera titulo="Actividades" dato={datos ? `${datos.total.toFixed(0)} km` : undefined}
         frase="Todo lo que has corrido, caminado y entrenado." />
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice mal">{error}</p>}
       {cargando ? <Esqueleto /> : datos ? <Activities acts={datos.lista} /> : null}
       <Footer />
       <TabBar role={papel(sesion)} />

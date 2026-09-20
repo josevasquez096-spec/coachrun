@@ -24,7 +24,7 @@ export default function RecordPage() {
     <main className="shell">
       <Refrescar />
       <Cabecera titulo="Iniciar" frase="Graba tu sesión con GPS. Sigue midiendo con la pantalla apagada." />
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice mal">{error}</p>}
       {/* El Recorder se monta pase lo que pase con la red: el motor de
           grabación es local y una carrera en curso tiene que seguir viéndose
           aunque se pierda la cobertura a mitad. Sin lista de entrenamientos se

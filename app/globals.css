@@ -40,7 +40,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .brand { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
 .brand span { color: var(--verde-txt); }
-.brand-logo { height: 34px; width: auto; display: block; }
+.brand-logo { height: 44px; width: auto; display: block; }
 .muted { color: var(--ink-2); }
 
 h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.035em; margin: 0 0 4px; line-height: 1.05; }
@@ -105,7 +105,11 @@ h2 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; letter-spacing: -.0
 .metric b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .metric small { color: var(--ink-2); }
 .rec-actions { display: grid; gap: 10px; }
-.notice { background: var(--track); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--flare-ink); }
+/* Aviso normal: algo que conviene saber, en verde tenue. */
+.notice { background: var(--track); border-radius: 12px; padding: 11px 13px; font-size: 13px; color: var(--flare-ink); }
+/* Aviso de que algo FALLÓ. Tiene que verse distinto: un error en una caja
+   verde parece un mensaje amable y se pasa por alto. */
+.notice.mal { background: var(--alerta-suave); color: var(--alerta); border: 1px solid #F3C4AC; font-weight: 600; }
 
 /* ---------- Barra de pestañas ----------
    Con icono encima del nombre: con seis pestañas el nombre solo se apretaba
@@ -285,3 +289,19 @@ h2 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; letter-spacing: -.0
 
 /* La franja del mes/semana: sin la raya negra gruesa, que pesaba mucho. */
 .sec-head { border-bottom-width: 1px; border-bottom-color: var(--line); font-size: 12px; }
+
+
+/* ---------- Ficha del alumno ---------- */
+.volver { font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.ficha-cab { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; }
+.ficha-cab .estado { color: var(--ink-2); font-size: 13.5px; display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+
+/* Las pestañas Plan / Actividades dentro de la ficha */
+.tabs { border-radius: 999px; padding: 5px; box-shadow: var(--sombra); margin-bottom: 20px; }
+.tabs a { padding: 9px; font-size: 14.5px; }
+
+/* El contador de mensajes sin leer en la lista del chat */
+.sin-leer {
+  background: var(--rojo); color: #fff; border-radius: 999px; min-width: 22px; height: 22px;
+  padding: 0 6px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800;
+}

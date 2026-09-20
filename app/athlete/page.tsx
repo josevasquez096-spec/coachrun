@@ -21,7 +21,7 @@ export default function AthleteHome() {
       <Refrescar />
       <Cabecera titulo="Mi plan" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
         frase="Lo que toca esta semana. Marca lo hecho y sal a correr." />
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice mal">{error}</p>}
       {cargando ? <Esqueleto /> : !datos ? null : (
         <>
           {!perfil?.strava_athlete_id && <p className="notice">Conecta Strava para que tus carreras se sincronicen solas. <Link href="/api/strava/connect" style={{ textDecoration: 'underline' }}>Conectar</Link></p>}

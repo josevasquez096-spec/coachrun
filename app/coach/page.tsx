@@ -41,7 +41,7 @@ export default function Coach() {
       <Refrescar />
       <Cabecera titulo="Alumnos" nombre={perfil?.full_name} avatar={perfil?.avatar_url}
         frase="Gestiona tus atletas, crea planes y lleva su progreso al siguiente nivel." />
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice mal">{error}</p>}
       {cargando ? <Esqueleto /> : !datos || !sesion ? null : (
         <>
           <InviteLink coachId={sesion.user.id} />

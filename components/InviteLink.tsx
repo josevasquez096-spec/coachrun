@@ -21,7 +21,7 @@ export default function InviteLink({ coachId }: { coachId: string }) {
         <span className="icono"><IcoInvitar /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="titulo">Invitar alumnos</div>
-          <p className="desc">Comparte el enlace y empieza a construir grandes resultados.</p>
+          <p className="desc">Comparte el enlace y súmalos a tu grupo.</p>
         </div>
         <button className="btn-lima-borde" onClick={share}>
           <IcoEnlace />{copied ? 'Copiado' : 'Copiar'}

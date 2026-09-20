@@ -52,16 +52,21 @@ export default function Alumno() {
   return (
     <main className="shell">
       <Refrescar />
-      <div className="topbar"><Link href="/coach" className="muted">← Alumnos</Link></div>
+      <div className="topbar" style={{ marginBottom: 12 }}>
+        <Link href="/coach" className="volver">← Alumnos</Link>
+      </div>
 
-      {error && <p className="notice">{error}</p>}
+      {error && <p className="notice mal">{error}</p>}
       {cargando ? <Esqueleto /> : !datos ? null : (
         <>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 14 }}>
-            <Avatar url={a?.avatar_url} name={a?.full_name} size={52} />
-            <div>
-              <h1 style={{ margin: 0 }}>{a?.full_name}</h1>
-              <span className="muted" style={{ fontSize: 13 }}>{a?.strava_athlete_id ? 'Strava conectado' : 'Sin Strava'}</span>
+          <div className="ficha-cab">
+            <Avatar url={a?.avatar_url} name={a?.full_name} size={62} />
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ margin: 0, fontSize: 28 }}>{a?.full_name}</h1>
+              <span className="estado">
+                <i className="punto-estado" style={a?.strava_athlete_id ? { background: '#FC4C02' } : undefined} />
+                {a?.strava_athlete_id ? 'Strava conectado' : 'Sin Strava'}
+              </span>
             </div>
           </div>
 
