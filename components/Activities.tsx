@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { fmtPace, fmtTime, deporteDe, DEPORTE_ICONO, DEPORTE_LABEL } from '@/lib/format';
 import ActivityOverlay from './ActivityOverlay';
+import ImagenFuerza from './ImagenFuerza';
 import { RPE_LABEL } from '@/lib/zones';
 
 export type Act = {
@@ -99,7 +100,11 @@ export default function Activities({ acts, propias = true }: { acts: Act[]; prop
                         </div>
                       )}
                       <Splits a={a} />
-                      {propias && <ActivityOverlay a={a} />}
+                      {/* La fuerza no tiene traza ni parciales: lo suyo son los
+                          músculos, y de ahí sale su imagen para compartir. */}
+                      {deporteDe(a.type) === 'strength'
+                        ? <ImagenFuerza a={a as any} />
+                        : propias && <ActivityOverlay a={a} />}
                       {a.raw?.id && a.source === 'strava' && (
                         <a className="btn ghost block" style={{ marginTop: 8, fontSize: 13, padding: '7px 14px' }}
                           href={`https://www.strava.com/activities/${a.raw.id}`} target="_blank" rel="noopener noreferrer">Ver en Strava</a>

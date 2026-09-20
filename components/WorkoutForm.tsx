@@ -5,11 +5,12 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { TYPE_LABEL, todayLocal } from '@/lib/format';
 import PhaseBuilder from './PhaseBuilder';
 import { type Phase, totalMeters, totalSeconds } from '@/lib/phases';
+import MapaMusculos from './MapaMusculos';
 import { pedir } from '@/lib/api';
 import { refrescar } from '@/lib/pantalla';
 
 type Existing = {
-  id: string; date: string; type: string; title: string; description: string | null;
+  id: string; date: string; type: string; title: string; description: string | null; muscles?: string[] | null;
   target_pace: string | null; phases: Phase[] | null;
 };
 
@@ -23,6 +24,7 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
     target_pace: existing?.target_pace ?? '',
   });
   const [phases, setPhases] = useState<Phase[]>(existing?.phases ?? []);
+  const [musculos, setMusculos] = useState<string[]>(existing?.muscles ?? []);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const set = (k: string, v: string) => setF({ ...f, [k]: v });
@@ -35,6 +37,9 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
     target_duration_min: phases.length ? Math.round(totalSeconds(phases) / 60) : null,
     target_pace: f.target_pace || null,
     phases: phases.length ? phases : null,
+    // Solo tiene sentido en fuerza; en una carrera se guarda vacío para que no
+    // quede colgando de un entrenamiento al que se le cambió el tipo.
+    muscles: f.type === 'strength' && musculos.length ? musculos : null,
   });
 
   async function save() {
@@ -73,6 +78,14 @@ export default function WorkoutForm({ athleteId, existing, onDone }: { athleteId
       <div className="row">
         <div className="field"><label>Fecha</label><input type="date" value={f.date} onChange={(e) => set('date', e.target.value)} /></div>
         <div className="field"><label>Tipo</label><select value={f.type} onChange={(e) => set('type', e.target.value)}>{Object.entries(TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+
+      {f.type === 'strength' && (
+        <div className="field">
+          <label>Músculos trabajados</label>
+          <MapaMusculos marcados={musculos} id="asignar"
+            alTocar={(id) => setMusculos((m) => m.includes(id) ? m.filter((x) => x !== id) : [...m, id])} />
+        </div>
+      )}
       </div>
       <div className="field"><label>Título</label><input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="Ej. Series 6×800" /></div>
 

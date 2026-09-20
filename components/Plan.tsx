@@ -6,12 +6,14 @@ import { expand, describe, type Phase } from '@/lib/phases';
 import WorkoutForm from './WorkoutForm';
 import * as portapapeles from '@/lib/portapapeles';
 import { pedir } from '@/lib/api';
+import MapaMusculos from './MapaMusculos';
+import { nombresDe } from '@/lib/musculos';
 import { refrescar } from '@/lib/pantalla';
 
 type W = {
   id: string; date: string; type: string; title: string; description: string | null;
   target_distance_km: number | null; target_duration_min: number | null; target_pace: string | null;
-  completed: boolean; phases: Phase[] | null;
+  completed: boolean; phases: Phase[] | null; muscles?: string[] | null;
 };
 
 /** Lunes de la semana a la que pertenece una fecha (formato YYYY-MM-DD). */
@@ -29,6 +31,7 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
   const [helpId, setHelpId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [err, setErr] = useState('');
+  const [musc, setMusc] = useState<string | null>(null);
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const hoy = todayLocal();
 
@@ -131,6 +134,11 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                           <button className="chip" onClick={() => setHelpId(helpId === x.id ? null : x.id)}>¿Cómo lo paso al Garmin?</button>
                         </>
                       )}
+                      {x.type === 'strength' && x.muscles?.length ? (
+                        <button className="chip" onClick={() => setMusc(musc === x.id ? null : x.id)}>
+                          {musc === x.id ? 'Ocultar músculos' : `Ver ${x.muscles.length} músculos`}
+                        </button>
+                      ) : null}
                       {editable && <button className="chip" onClick={() => copiar(x)}>{copiadoId === x.id ? '✓ Copiado' : 'Copiar'}</button>}
                       {editable && <button className="chip" onClick={() => setEditId(editId === x.id ? null : x.id)}>{editId === x.id ? 'Cerrar' : 'Editar'}</button>}
                       {editable && <button className="chip danger" onClick={() => remove(x.id)}>Borrar</button>}
@@ -156,6 +164,13 @@ export default function Plan({ workouts, editable = false, athleteId, nombre }: 
                         ))}
                       </ol>
                     )}
+
+                    {musc === x.id && x.muscles?.length ? (
+                      <div style={{ marginTop: 10 }}>
+                        <MapaMusculos marcados={x.muscles} alto={230} id={`plan-${x.id}`} />
+                        <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>{nombresDe(x.muscles).join(' · ')}</p>
+                      </div>
+                    ) : null}
 
                     {editable && editId === x.id && athleteId && (
                       <div style={{ marginTop: 10 }}>

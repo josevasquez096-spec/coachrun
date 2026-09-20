@@ -3,7 +3,10 @@ import { supabaseServer, supabaseAdmin, usuarioActual } from '@/lib/supabase-ser
 import { notifyUser } from '@/lib/push';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
-const TIPOS = ['easy', 'long', 'tempo', 'intervals', 'race', 'rest', 'strength'];
+// La misma lista que `workout_type` en Postgres. Si se amplia alli, aqui
+// tambien: lo que no este en la lista se pega como rodaje suave.
+const TIPOS = ['easy', 'long', 'tempo', 'intervals', 'race', 'rest', 'strength', 'walk', 'trail'];
+const MUSCULOS_OK = /^[a-z]{3,12}$/;
 
 /**
  * Copia un entrenamiento al plan de un alumno.
@@ -38,6 +41,11 @@ export async function POST(req: Request) {
     target_distance_km: Number.isFinite(workout.target_distance_km) ? workout.target_distance_km : null,
     target_duration_min: Number.isFinite(workout.target_duration_min) ? workout.target_duration_min : null,
     phases: fases,
+    // Los músculos solo viajan en un entrenamiento de fuerza, y se filtran:
+    // lo que llega del navegador no se mete tal cual en la base de datos.
+    muscles: workout.type === 'strength' && Array.isArray(workout.muscles)
+      ? workout.muscles.filter((m: unknown) => typeof m === 'string' && MUSCULOS_OK.test(m)).slice(0, 20)
+      : null,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

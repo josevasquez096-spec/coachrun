@@ -1,5 +1,5 @@
 'use client';
-import { MUSCULOS, NOMBRE, type Cara } from '@/lib/musculos';
+import { MUSCULOS, NOMBRE, ANCHO, EJE, MANCHAS, lados, type Cara } from '@/lib/musculos';
 
 /**
  * El selector de músculos: los dos cuerpos más la lista de nombres.
@@ -19,39 +19,6 @@ import { MUSCULOS, NOMBRE, type Cara } from '@/lib/musculos';
  */
 export const ROJO_MUSCULO = '#E5332A';
 
-/** Ancho de cada dibujo cuando el alto es 400. Son distintos entre sí. */
-const ANCHO: Record<Cara, number> = { frente: 225, espalda: 196 };
-const EJE: Record<Cara, number> = { frente: 112.5, espalda: 98 };
-
-type Mancha = { cx: number; cy: number; rx: number; ry: number };
-
-/**
- * Dónde cae cada grupo en su dibujo, medido sobre el propio cuerpo con una
- * rejilla. Si se cambian las imágenes de `public/musculos/`, hay que volver a
- * medirlo.
- */
-const MANCHAS: Record<string, Mancha[]> = {
-  hombros:    [{ cx: 71, cy: 90, rx: 13, ry: 17 }],
-  pecho:      [{ cx: 100, cy: 93, rx: 12, ry: 16 }],
-  biceps:     [{ cx: 62, cy: 138, rx: 12, ry: 26 }],
-  antebrazos: [{ cx: 60, cy: 190, rx: 13, ry: 28 }],
-  abdomen:    [{ cx: 112.5, cy: 150, rx: 17, ry: 40 }],
-  oblicuos:   [{ cx: 90, cy: 163, rx: 8, ry: 25 }],
-  cuadriceps: [{ cx: 97, cy: 250, rx: 16, ry: 43 }],
-  aductores:  [{ cx: 107, cy: 235, rx: 7, ry: 30 }],
-  tibial:     [{ cx: 97, cy: 330, rx: 10, ry: 31 }],
-  trapecio:   [{ cx: 98, cy: 88, rx: 33, ry: 28 }],
-  dorsal:     [{ cx: 78, cy: 133, rx: 18, ry: 31 }],
-  lumbar:     [{ cx: 98, cy: 168, rx: 14, ry: 19 }],
-  triceps:    [{ cx: 52, cy: 138, rx: 12, ry: 26 }],
-  gluteos:    [{ cx: 85, cy: 205, rx: 14, ry: 20 }],
-  isquios:    [{ cx: 86, cy: 255, rx: 15, ry: 36 }],
-  gemelos:    [{ cx: 88, cy: 320, rx: 11, ry: 29 }],
-};
-
-/** Las dos posiciones de un grupo (izquierda y derecha), o una si va en el eje. */
-const lados = (f: Mancha, eje: number) =>
-  Math.abs(f.cx - eje) < 2 ? [f.cx] : [f.cx, 2 * eje - f.cx];
 
 export default function MapaMusculos({
   marcados, alTocar, alto = 290, id = 'mm', conLista = true,
