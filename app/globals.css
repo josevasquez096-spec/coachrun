@@ -311,3 +311,48 @@ h2 { font-size: 17px; font-weight: 700; margin: 26px 0 10px; letter-spacing: -.0
   background: var(--rojo); color: #fff; border-radius: 999px; min-width: 22px; height: 22px;
   padding: 0 6px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800;
 }
+
+/* ---------- Menú lateral (se abre desde la derecha) ---------- */
+.abre-menu {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  display: grid; place-items: center; cursor: pointer;
+}
+.velo { position: fixed; inset: 0; background: rgba(11,13,11,.45); z-index: 60; }
+.cajon {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 61;
+  width: min(86vw, 330px); background: var(--surface);
+  border-left: 1px solid var(--line); box-shadow: -8px 0 30px rgba(11,13,11,.16);
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform .22s ease;
+  overflow-y: auto;
+}
+.cajon.on { transform: translateX(0); }
+.cajon-cab { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cierra {
+  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
+  background: transparent; color: var(--ink-2); display: grid; place-items: center; cursor: pointer;
+}
+.cajon-lista { display: grid; gap: 4px; }
+.cajon-lista a {
+  display: grid; gap: 1px; padding: 12px 13px; border-radius: 14px; border: 1px solid transparent;
+}
+.cajon-lista a b { font-size: 15.5px; font-weight: 700; }
+.cajon-lista a small { color: var(--ink-2); font-size: 12.5px; }
+.cajon-lista a:active { background: var(--bg); }
+.cajon-lista a.on { background: var(--verde-suave); border-color: #D6EFB4; }
+.cajon-lista a.on b { color: var(--verde-txt); }
+
+/* ---------- Servicios ---------- */
+.servicio { display: grid; gap: 6px; padding: 16px; border-radius: 18px; background: var(--surface);
+  border: 1px solid var(--line); box-shadow: var(--sombra); }
+.servicio + .servicio { margin-top: 12px; }
+.servicio h3 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+.servicio p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.45; }
+.servicio ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+.btn-wa {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 13px 18px; border-radius: 999px; border: none; cursor: pointer;
+  background: #25D366; color: #08210F; font-weight: 800; font-size: 15px;
+}

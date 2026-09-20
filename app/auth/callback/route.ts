@@ -23,5 +23,11 @@ export async function GET(req: Request) {
       }
     }
   }
-  return NextResponse.redirect(new URL('/', url.origin));
+  // `next` permite volver a una pantalla concreta: lo usa el correo de
+  // recuperar contraseña, que manda derecho a Cuenta para ponerse una nueva.
+  // Solo se aceptan rutas de dentro, para que un enlace manipulado no pueda
+  // mandar a nadie a otro sitio.
+  const next = url.searchParams.get('next') ?? '/';
+  const destino = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+  return NextResponse.redirect(new URL(destino, url.origin));
 }

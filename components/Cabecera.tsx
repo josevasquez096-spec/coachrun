@@ -1,4 +1,5 @@
 import Avatar from './Avatar';
+import Menu from './Menu';
 import { LOGO } from '@/lib/marca';
 
 /**
@@ -18,13 +19,16 @@ export default function Cabecera({
         <img src={LOGO} alt="MyCoachRuns" className="brand-logo" width={900} height={430} />
         {/* `dato` es una cifra (los km del total), no una persona: va sin
             avatar, porque si no se le sacaba la inicial y salía un "1". */}
-        {dato && <span style={{ fontWeight: 800, fontSize: 15 }}>{dato}</span>}
-        {!dato && nombre && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-            <span style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombre}</span>
-            <Avatar url={avatar} name={nombre} size={36} />
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+          {dato && <span style={{ fontWeight: 800, fontSize: 15 }}>{dato}</span>}
+          {!dato && nombre && (
+            <>
+              <span style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombre}</span>
+              <Avatar url={avatar} name={nombre} size={34} />
+            </>
+          )}
+          <Menu />
+        </div>
       </div>
       <h1>{titulo}</h1>
       {frase && <p className="sub">{frase}</p>}

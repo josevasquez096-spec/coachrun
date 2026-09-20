@@ -4,7 +4,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import Footer from './Footer';
 import { pedir, motivoDeFallo, dominioPublico, enLaApp } from '@/lib/api';
 
-type Mode = 'signin' | 'signup' | 'magic';
+type Mode = 'signin' | 'signup' | 'magic' | 'olvide';
 
 export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, fallo }: { inviteCoachId?: string; inviteCoachName?: string; sesionRota?: boolean; fallo?: string }) {
   const [mode, setMode] = useState<Mode>(inviteCoachId ? 'signup' : 'signin');
@@ -34,6 +34,14 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
           }
           location.href = '/';
         } else setMsg('Cuenta creada. Revisa tu correo para confirmarla y luego entra con tu contraseña.');
+      } else if (mode === 'olvide') {
+        // Manda un correo con un enlace que abre la sesión y lleva derecho a
+        // Cuenta, donde está el campo para ponerse una contraseña nueva.
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: `${dominioPublico()}/auth/callback?next=/athlete/settings`,
+        });
+        if (error) throw error;
+        setMsg('Te mandamos un correo. Ábrelo desde este mismo teléfono y te llevará a ponerte una contraseña nueva. Si no llega en unos minutos, mira en la carpeta de correo no deseado.');
       } else {
         const { error } = await sb.auth.signInWithOtp({
           email, options: { emailRedirectTo: `${dominioPublico()}/auth/callback`, data: { full_name: name, coach_code: coach } },
@@ -101,7 +109,7 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
         <div className="field"><label>Correo</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} inputMode="email" autoComplete="email" /></div>
 
-        {mode !== 'magic' && (
+        {mode !== 'magic' && mode !== 'olvide' && (
           <div className="field"><label>Contraseña</label>
             <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="Mínimo 6 caracteres" /></div>
         )}
@@ -109,9 +117,34 @@ export default function LoginForm({ inviteCoachId, inviteCoachName, sesionRota, 
         {err && <p className="notice mal">{err}</p>}
         {msg && <p className="muted" style={{ fontSize: 14 }}>{msg}</p>}
 
-        <button className="btn flare block" onClick={submit} disabled={busy || !email || (mode !== 'magic' && pass.length < 6)}>
-          {busy ? 'Un momento…' : mode === 'signin' ? 'Entrar' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace'}
+        <button className="btn flare block" onClick={submit}
+          disabled={busy || !email || (mode !== 'magic' && mode !== 'olvide' && pass.length < 6)}>
+          {busy ? 'Un momento…'
+            : mode === 'signin' ? 'Entrar'
+            : mode === 'signup' ? 'Crear cuenta'
+            : mode === 'olvide' ? 'Mandarme el correo'
+            : 'Enviar enlace'}
         </button>
+
+        {mode === 'signin' && (
+          <button onClick={() => { setMode('olvide'); setErr(''); setMsg(''); }}
+            style={{ background: 'none', border: 'none', width: '100%', marginTop: 12, padding: 0,
+              color: 'var(--ink-2)', fontSize: 13.5, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
+            Olvidé mi contraseña
+          </button>
+        )}
+        {mode === 'olvide' && (
+          <>
+            <p className="muted" style={{ fontSize: 12.5, marginTop: 10 }}>
+              El correo tarda un par de minutos. Solo se pueden mandar unos pocos por hora.
+            </p>
+            <button onClick={() => { setMode('signin'); setErr(''); setMsg(''); }}
+              style={{ background: 'none', border: 'none', width: '100%', marginTop: 6, padding: 0,
+                color: 'var(--ink-2)', fontSize: 13.5, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
+              Volver a entrar con contraseña
+            </button>
+          </>
+        )}
 
       </div>
 
