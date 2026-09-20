@@ -25,6 +25,13 @@ on:
 permissions:
   contents: write             # para publicar el APK en Releases
 
+env:
+  # La dirección del servidor al que llama la app. Queda grabada dentro del
+  # APK al compilar, así que el día que se mude a mycoachruns.com se cambia
+  # AQUÍ y se vuelve a compilar; con el APK viejo la app seguiría llamando a
+  # la dirección antigua.
+  SERVIDOR: https://coachrun-delta.vercel.app
+
 jobs:
   compilar:
     # Fijada a propósito: con 'ubuntu-latest' la máquina cambia sola y ya nos
@@ -98,8 +105,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
-          NEXT_PUBLIC_APP_URL: https://coachrun-delta.vercel.app
-        run: ./scripts/compilar-movil.sh https://coachrun-delta.vercel.app
+          NEXT_PUBLIC_APP_URL: ${{ env.SERVIDOR }}
+        run: ./scripts/compilar-movil.sh "$SERVIDOR"
 
       - name: Pasar la web a la cáscara de Android
         working-directory: movil

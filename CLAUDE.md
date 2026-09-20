@@ -199,7 +199,17 @@ Lo que sí molesta: la sesión se guarda por dominio, así que **todos tendrán 
 volver a entrar** y reinstalar la app de la pantalla de inicio. Conviene avisar
 al grupo con un solo mensaje cuando el dominio ya esté en verde.
 
+5. **Compilar un APK nuevo.** La dirección del servidor queda grabada dentro
+   del APK: con el viejo, la app seguiría llamando a `coachrun-delta`. Se
+   cambia `SERVIDOR` en `.github/workflows/apk.yml`, que es el único sitio.
+
 `mycoachruns.com` ya está en `allowNavigation` de la cáscara de Android.
+
+Ojo con los enlaces que la app genera (invitación, confirmación de correo):
+salen de `dominioPublico()` de `lib/api.ts`. En la web es el dominio donde
+estés; dentro del APK es la dirección con la que se compiló. Si se muda el
+dominio y no se recompila el APK, las invitaciones que mande el coach desde el
+teléfono seguirán apuntando al dominio viejo.
 
 ## Android (v5)
 La cáscara de Android está en `movil/` (Capacitor), aparte para que Vercel no
