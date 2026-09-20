@@ -30,7 +30,7 @@ env:
   # APK al compilar, así que el día que se mude a mycoachruns.com se cambia
   # AQUÍ y se vuelve a compilar; con el APK viejo la app seguiría llamando a
   # la dirección antigua.
-  SERVIDOR: https://coachrun-delta.vercel.app
+  SERVIDOR: https://mycoachruns.com
 
 jobs:
   compilar:

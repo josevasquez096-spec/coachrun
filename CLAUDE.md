@@ -7,7 +7,7 @@ App de entrenamiento para un entrenador de running y su grupo. El coach asigna
 sesiones estructuradas, los atletas las ven en el teléfono, graban con GPS o con
 reloj, y todo se sincroniza con Strava.
 
-- Producción: https://coachrun-delta.vercel.app
+- Producción: https://mycoachruns.com (antes coachrun-delta.vercel.app, que sigue vivo)
 - Repo: github.com/josevasquez096-spec/coachrun (rama `main`, deploy automático en Vercel)
 - Autoría: JVasquez · Instagram jvasquez324 · Strava athlete 145304552
 
@@ -169,12 +169,13 @@ que comprobar que el alumno de destino sea de este coach: la regla RLS de
 asignas. `WorkoutForm` sí inserta desde el cliente (viene de antes) y por eso
 tiene ese mismo agujero: si se toca, conviene pasarlo por la ruta también.
 
-## Dominio propio: mycoachruns.com (libre para mudarse)
-Comprado `mycoachruns.com`. Estuvo en espera mientras Strava revisaba la
-ampliación de atletas; **ya está aprobada, así que el freno desapareció**. El
-proyecto sigue en `coachrun-delta.vercel.app` hasta que se haga la mudanza.
+## Dominio propio: mycoachruns.com (mudanza hecha, sept. 2026)
+El dominio está en Vercel con configuración válida (junto con `www`, que
+redirige, y el `coachrun-delta.vercel.app` de antes, que sigue vivo).
+`NEXT_PUBLIC_APP_URL` y la dirección de Supabase ya apuntan al nuevo.
 
-Orden de la mudanza, y qué afecta cada pieza:
+Se deja escrito el orden por si hay que repetirlo con otro dominio, porque
+**el orden es lo que importa**:
 
 1. Vercel → Settings → Domains → añadir el dominio, poner los DNS que indique
    Vercel, esperar el verde y marcarlo como principal.
