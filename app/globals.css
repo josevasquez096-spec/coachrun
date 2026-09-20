@@ -40,7 +40,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .brand { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
 .brand span { color: var(--verde-txt); }
-.brand-logo { height: 58px; width: auto; display: block; margin-left: -2px; }
+.brand-logo { height: 76px; width: auto; display: block; margin-left: -4px; }
 .muted { color: var(--ink-2); }
 
 h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.035em; margin: 0 0 4px; line-height: 1.05; }
